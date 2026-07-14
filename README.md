@@ -1,129 +1,110 @@
-# VeIA — Landing page
+# VeIA — Prototipo de marketing (Lean Startup)
 
-Landing de una sola página para **VeIA**: seguimiento en tiempo real de fallas eléctricas.
-HTML + CSS + JavaScript vanilla, **sin build step** — despliega directo en Vercel.
+Landing de **VeIA** (seguimiento en tiempo real de fallas eléctricas) construida en
+**Next.js** con captura de datos en **Vercel KV / Upstash Redis**. Mide interés real:
+visitas por canal, clics en el CTA, contactos, y un test cualitativo de comprensión.
 
-## Estructura
+## Rutas
 
-```
-├── index.html   # Página completa (hero, problema, cómo funciona, OR, CTA final, modal)
-├── styles.css   # Estilos (dark, responsive, mobile-first)
-├── script.js    # Modal + tracking de eventos (cta_click, lead_submit)
-└── README.md
-```
-
-## Analítica (medición de CLICS / VISITANTES ÚNICOS)
-
-La página integra **dos** sistemas — con uno basta, pero se complementan:
-
-| Sistema | Qué mide | Requisitos |
-|---|---|---|
-| **GoatCounter** (recomendado) | Visitantes únicos **y** el evento `cta_click` con visitantes únicos por evento | Cuenta gratis |
-| **Vercel Web Analytics** | Visitantes únicos y pageviews (eventos personalizados requieren plan Pro) | Activarlo en el dashboard de Vercel |
-
-### Configurar GoatCounter (2 minutos)
-
-1. Crea una cuenta gratis en <https://www.goatcounter.com/signup> y elige un código de sitio (ej: `veia`).
-2. En `index.html`, reemplaza `TU-CODIGO` por tu código:
-   ```html
-   <script data-goatcounter="https://veia.goatcounter.com/count"
-           async src="//gc.zgo.at/count.js"></script>
-   ```
-3. Listo. En tu panel de GoatCounter verás:
-   - **Visitantes únicos** → pageviews de `/`
-   - **Clics en el CTA** → el "path" `cta_click` (marcado como evento)
-
-> **Tasa de clic = únicos de `cta_click` ÷ visitantes únicos de la página.**
-> GoatCounter muestra ambos números en el mismo panel, columna "visits".
-
-Nota: GoatCounter no cuenta visitas desde `localhost`, así que tus pruebas locales no ensucian los datos.
-
-### Activar Vercel Web Analytics (opcional)
-
-1. En el dashboard de Vercel → tu proyecto → pestaña **Analytics** → **Enable**.
-2. El script `/_vercel/insights/script.js` ya está incluido en `index.html`; empieza a contar solo.
-3. El evento `cta_click` también se envía por esta vía, pero Vercel solo muestra eventos personalizados en el plan **Pro**. En plan Hobby úsalo solo para visitantes únicos.
-
-## Eventos que se registran
-
-| Evento | Cuándo |
+| Ruta | Qué es |
 |---|---|
-| `cta_click` | Cada clic en cualquier botón "Quiero probar VeIA" (nav, hero, CTA final). Abre el demo interactivo. Incluye la ubicación del botón. |
-| `lead_submit` | Cuando alguien completa el registro de la falla en el demo (nombre + contacto). Los datos personales **no** se envían a la analítica. |
+| `/` | La landing. Acepta `?canal=...` o `?utm_source=...` para atribuir el tráfico. |
+| `/test` | **Ruta oculta** para el test de comprensión: muestra el prototipo 8 segundos (con temporizador visible), lo oculta y hace 3 preguntas abiertas. |
+| `/resultados` | Panel protegido con contraseña: visitas, clics, tasa de conversión global y por canal, contactos, respuestas del test, y descarga JSON/CSV. |
+| `/api/*` | Funciones serverless: `visit`, `cta`, `lead`, `test-response`, `results`. |
 
-### El demo interactivo
+**Contraseña de `/resultados`: `veia2026`** (cámbiala con la variable de entorno
+`RESULTS_PASSWORD` en Vercel, sin tocar código).
 
-El CTA abre un flujo que simula la app real, en 3 pasos: **sector + tipo de lugar**
-→ **tipo de falla** → **contacto** ("¿a dónde te avisamos cada avance?"). Ahí se
-capturan los datos, y al final el usuario ve la pantalla de confirmación simulada:
-radicado, brigada asignada encendiéndose paso a paso y el ETA de restablecimiento.
-El lead que llega a tu correo incluye sector, tipo de lugar y tipo de falla —
-contexto valioso para priorizar a quién contactar primero.
+## Qué se captura y dónde
 
-## ¿Dónde veo los datos del formulario (leads)?
+Todo queda en Redis (Vercel KV):
 
-Los leads llegan **a tu correo** vía [FormSubmit](https://formsubmit.co) (gratis, sin cuenta):
+| Clave | Contenido |
+|---|---|
+| `stats:visits:total` / `stats:visits:by_canal` | Contadores de visitas (1 por sesión de navegador) |
+| `stats:cta:total` / `stats:cta:by_canal` | Contadores de clics en "Quiero probar VeIA" |
+| `log:visits`, `log:cta` | Eventos crudos con timestamp y canal |
+| `log:leads` | Contactos: nombre, WhatsApp/correo, sector, tipo de lugar, tipo de falla, canal |
+| `log:test` | Respuestas del test cualitativo con timestamp |
 
-1. El primer envío del formulario en producción dispara un correo de **activación**
-   a `juansebastianyela@gmail.com` — abre ese correo y haz clic en **Activate**.
-2. Desde ahí, cada lead llega a tu bandeja como un correo con asunto
-   "Nuevo lead VeIA 🚀" con el nombre y el contacto en una tabla.
-3. **Recomendado**: tras activar, FormSubmit te da un *alias aleatorio*
-   (ej. `formsubmit.co/ajax/a1b2c3d4...`). Reemplaza el correo por ese alias en
-   `script.js` (constante `LEAD_ENDPOINT`) para no exponer tu email en el repo público.
+El clic en el CTA se registra **antes** de mostrar el formulario: si no lo completan,
+el clic ya quedó contado. La métrica clave (`CTA_CLICKS / VISITAS`) se calcula sola
+en `/resultados`, global y por canal.
 
-Además, cada envío queda contado en GoatCounter como evento `lead_submit`
-(solo el conteo — el dato de contacto nunca se envía a la analítica).
+> Respaldo: cada contacto también se envía por correo vía FormSubmit (ver
+> `MAIL_ENDPOINT` en `components/Landing.jsx`; el primer envío requiere hacer clic
+> en el correo de activación de FormSubmit).
 
-## Video demo
-
-La sección "Míralo en acción" (justo después del hero) embebe el video de YouTube
-<https://www.youtube.com/watch?v=JGwPxOTjNJg> vía `youtube-nocookie.com` con
-`loading="lazy"` (no frena la carga de la página). Para cambiar el video, solo
-reemplaza el ID en el `src` del iframe en `index.html`.
-
-## Desplegar en Vercel paso a paso
+## Despliegue paso a paso
 
 ### 1. Subir a GitHub
 
 ```bash
-git init
+git init                       # (omite si ya es un repo)
 git add .
-git commit -m "Landing VeIA"
-# Crea el repo en github.com (o con GitHub CLI):
-gh repo create veia-landing --public --source=. --push
-# — o manualmente —
-git remote add origin https://github.com/TU-USUARIO/veia-landing.git
+git commit -m "VeIA prototipo de marketing"
+git remote add origin https://github.com/TU-USUARIO/VeIA.git
 git branch -M main
 git push -u origin main
 ```
 
-### 2. Conectar a Vercel
+### 2. Importar en Vercel
 
-1. Entra a <https://vercel.com> e inicia sesión (puedes usar tu cuenta de GitHub).
-2. **Add New… → Project** → importa el repo `veia-landing`.
-3. Framework Preset: **Other** (Vercel lo detecta como sitio estático). No cambies nada — sin build command, sin output directory.
-4. Clic en **Deploy**. En ~20 segundos tienes la URL `https://veia-landing.vercel.app`.
+1. [vercel.com](https://vercel.com) → **Add New… → Project** → importa el repo.
+2. Vercel detecta **Next.js** automáticamente (además `vercel.json` lo fija). No cambies nada.
+3. **Deploy**.
 
-### 3. Después del deploy
+> Si el proyecto ya existía como sitio estático: entra a **Settings → Build & Development
+> Settings** y verifica que Framework Preset diga **Next.js** (el `vercel.json` del repo
+> ya lo fuerza, así que normalmente no hay que tocar nada).
 
-- Activa **Analytics** en el dashboard del proyecto (pestaña Analytics → Enable).
-- Verifica que reemplazaste `TU-CODIGO` de GoatCounter (paso de arriba). Si lo cambias después, solo haz commit + push: Vercel redespliega automáticamente con cada push a `main`.
-- Prueba desde el celular: abre la URL, haz clic en el CTA y confirma que el evento aparece en GoatCounter (tarda ~1 min).
+### 3. Activar Vercel KV (Upstash Redis)
 
-### Alternativa: deploy directo por CLI (sin GitHub)
+Vercel KV hoy se provisiona como **Upstash for Redis** desde el Marketplace:
 
-```bash
-npm i -g vercel
-vercel          # preview
-vercel --prod   # producción
+1. En el dashboard del proyecto → pestaña **Storage** → **Create Database** (o *Browse Marketplace*).
+2. Elige **Upstash** → **Redis** → plan **Free** → región cercana (us-east-1 sirve).
+3. En "Connect Project", selecciona este proyecto (ambientes Production/Preview/Development).
+4. Vercel inyecta las variables automáticamente (`KV_REST_API_URL` + `KV_REST_API_TOKEN`
+   o `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` — el código soporta ambas).
+5. **Redespliega** (Deployments → ⋯ → Redeploy) para que el nuevo deploy lea las variables.
+
+Sin KV la página funciona igual (no se rompe), solo que no guarda datos y
+`/resultados` te avisará "KV no configurado".
+
+### 4. Generar los enlaces con UTM por canal
+
+Comparte la landing con un parámetro distinto por canal/grupo:
+
+```
+https://TU-DOMINIO.vercel.app/?canal=whatsapp-pymes
+https://TU-DOMINIO.vercel.app/?canal=grupo-comerciantes
+https://TU-DOMINIO.vercel.app/?canal=instagram
 ```
 
-## Probar en local
+También funciona `?utm_source=...`. Sin parámetro, la visita se atribuye a `directo`.
+El canal se recuerda durante la sesión del navegador, así el clic en el CTA queda
+atribuido al canal correcto aunque el usuario navegue por la página.
 
-No necesita servidor, pero para evitar rarezas de rutas:
+### 5. Test cualitativo (5–8 personas)
+
+Envíale a cada persona el enlace `https://TU-DOMINIO.vercel.app/test`
+(no está enlazado desde la landing — es una ruta oculta). El flujo es automático:
+8 segundos de prototipo con temporizador → 3 preguntas abiertas → guardado en KV.
+
+## Desarrollo local
 
 ```bash
-npx serve .
-# o simplemente abre index.html en el navegador
+npm install
+npm run dev        # http://localhost:3000
 ```
+
+Para que el guardado funcione en local, trae las variables de KV:
+`npm i -g vercel && vercel link && vercel env pull .env.development.local`
+
+## Analítica secundaria
+
+`@vercel/analytics` está incluido: activa **Analytics** en el dashboard del proyecto
+para tener pageviews/visitantes únicos como fuente de contraste. La fuente principal
+de la tasa de conversión es el propio KV (por canal).

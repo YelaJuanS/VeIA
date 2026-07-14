@@ -22,7 +22,6 @@ html { scroll-behavior: smooth; }
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: var(--font);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }
@@ -63,7 +62,7 @@ h2 { font-size: clamp(1.6rem, 4vw, 2.4rem); margin-bottom: 1rem; }
 
 /* ─────────────── Botones ─────────────── */
 .btn {
-  font-family: var(--font);
+  font-family: inherit;
   font-weight: 700;
   font-size: 1rem;
   border: none;
@@ -620,7 +619,7 @@ h2 { font-size: clamp(1.6rem, 4vw, 2.4rem); margin-bottom: 1rem; }
   border: 1px solid var(--border);
   border-radius: 10px;
   color: var(--text);
-  font-family: var(--font);
+  font-family: inherit;
   font-size: 1rem;
   padding: 0.75rem 0.9rem;
   margin-bottom: 1.1rem;
@@ -695,7 +694,7 @@ h2 { font-size: clamp(1.6rem, 4vw, 2.4rem); margin-bottom: 1rem; }
   margin-bottom: 1.2rem;
 }
 .chip {
-  font-family: var(--font);
+  font-family: inherit;
   font-size: 0.86rem;
   font-weight: 600;
   color: var(--text);
@@ -717,7 +716,7 @@ h2 { font-size: clamp(1.6rem, 4vw, 2.4rem); margin-bottom: 1rem; }
 /* Opciones de tipo de falla */
 .option-list { display: flex; flex-direction: column; gap: 0.6rem; }
 .option {
-  font-family: var(--font);
+  font-family: inherit;
   font-size: 0.95rem;
   font-weight: 600;
   text-align: left;
@@ -797,3 +796,203 @@ h2 { font-size: clamp(1.6rem, 4vw, 2.4rem); margin-bottom: 1rem; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
 }
+
+/* ═══════════════════ /test — test de comprensión ═══════════════════ */
+
+.test-page {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+.test-card {
+  width: min(720px, 100%);
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+}
+.test-card h1 { font-size: clamp(1.4rem, 4vw, 2rem); margin-bottom: 0.5rem; }
+.test-card .modal-sub { margin-bottom: 1.5rem; }
+
+.countdown {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+.countdown-num {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--accent);
+  min-width: 2ch;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.countdown-track {
+  flex: 1;
+  height: 8px;
+  border-radius: 99px;
+  background: var(--border);
+  overflow: hidden;
+}
+.countdown-fill {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  transition: width 1s linear;
+}
+
+.test-proto {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--bg);
+  padding: 1.25rem 1.25rem 0;
+  text-align: center;
+}
+.test-proto h2 { font-size: clamp(1.1rem, 3vw, 1.5rem); margin-bottom: 1rem; }
+
+.test-question { margin-bottom: 1.25rem; }
+.test-question label {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 0.45rem;
+  font-size: 0.98rem;
+}
+.test-card textarea {
+  width: 100%;
+  min-height: 88px;
+  resize: vertical;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 1rem;
+  padding: 0.75rem 0.9rem;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+.test-card textarea:focus { border-color: var(--accent); }
+
+.test-done { text-align: center; padding: 2rem 0; }
+.test-done .thanks-icon { font-size: 2.6rem; margin-bottom: 0.6rem; }
+
+/* ═══════════════════ /resultados — panel ═══════════════════ */
+
+.res-page {
+  min-height: 100dvh;
+  padding: 2.5rem 0 4rem;
+}
+.res-page .container { width: min(920px, 100% - 2.5rem); }
+.res-page h1 { font-size: clamp(1.5rem, 4vw, 2.2rem); margin-bottom: 0.4rem; }
+.res-sub { color: var(--text-dim); margin-bottom: 2rem; }
+
+.res-login {
+  max-width: 380px;
+  margin: 4rem auto;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 2rem 1.75rem;
+}
+.res-login h1 { font-size: 1.4rem; margin-bottom: 1rem; }
+.res-login input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 1rem;
+  padding: 0.75rem 0.9rem;
+  margin-bottom: 1rem;
+  outline: none;
+}
+.res-login input:focus { border-color: var(--accent); }
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+.kpi {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.2rem;
+}
+.kpi-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  margin-bottom: 0.3rem;
+}
+.kpi-value {
+  font-size: 1.9rem;
+  font-weight: 800;
+  color: var(--accent);
+  line-height: 1.15;
+}
+
+.res-section { margin-bottom: 2.5rem; }
+.res-section h2 { font-size: 1.25rem; margin-bottom: 0.9rem; }
+
+.res-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.res-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  min-width: 480px;
+}
+.res-table th, .res-table td {
+  text-align: left;
+  padding: 0.65rem 0.9rem;
+  border-bottom: 1px solid var(--border);
+}
+.res-table th {
+  background: var(--bg-card);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+}
+.res-table tr:last-child td { border-bottom: none; }
+.res-table .num { font-variant-numeric: tabular-nums; }
+
+.res-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+
+.res-answer {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.25rem;
+  margin-bottom: 0.9rem;
+}
+.res-answer-head {
+  font-weight: 700;
+  color: var(--accent);
+  font-size: 0.85rem;
+  margin-bottom: 0.6rem;
+}
+.res-answer p { font-size: 0.92rem; margin-bottom: 0.5rem; }
+.res-answer p strong { color: var(--text-dim); font-weight: 600; }
+
+.res-empty { color: var(--text-dim); font-size: 0.92rem; }
+.res-error { color: var(--danger); font-size: 0.9rem; margin-bottom: 1rem; }
