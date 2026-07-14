@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import MapMockup from "../../components/MapMockup";
 
-const SECONDS = 8;
+const SECONDS = 16;
 
 const QUESTIONS = [
   {
@@ -38,7 +38,7 @@ export default function TestPage() {
   const [error, setError] = useState("");
   const [sending, setSending] = useState(false);
 
-  // Temporizador visible: a los 8 segundos el prototipo se oculta solo.
+  // Temporizador visible: a los SECONDS segundos el prototipo se oculta solo.
   useEffect(() => {
     if (phase !== "view") return;
     const t = setInterval(() => {

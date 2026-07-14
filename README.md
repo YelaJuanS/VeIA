@@ -9,7 +9,7 @@ visitas por canal, clics en el CTA, contactos, y un test cualitativo de comprens
 | Ruta | Qué es |
 |---|---|
 | `/` | La landing. Acepta `?canal=...` o `?utm_source=...` para atribuir el tráfico. |
-| `/test` | **Ruta oculta** para el test de comprensión: muestra el prototipo 8 segundos (con temporizador visible), lo oculta y hace 3 preguntas abiertas. |
+| `/test` | **Ruta oculta** para el test de comprensión: muestra el prototipo 16 segundos (con temporizador visible), lo oculta y hace 3 preguntas abiertas. |
 | `/resultados` | Panel protegido con contraseña: visitas, clics, tasa de conversión global y por canal, contactos, respuestas del test, y descarga JSON/CSV. |
 | `/api/*` | Funciones serverless: `visit`, `cta`, `lead`, `test-response`, `results`. |
 
@@ -91,7 +91,7 @@ atribuido al canal correcto aunque el usuario navegue por la página.
 
 Envíale a cada persona el enlace `https://TU-DOMINIO.vercel.app/test`
 (no está enlazado desde la landing — es una ruta oculta). El flujo es automático:
-8 segundos de prototipo con temporizador → 3 preguntas abiertas → guardado en KV.
+16 segundos de prototipo con temporizador → 3 preguntas abiertas → guardado en KV.
 
 ## Desarrollo local
 
