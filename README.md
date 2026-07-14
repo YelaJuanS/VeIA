@@ -68,10 +68,10 @@ Además, cada envío queda contado en GoatCounter como evento `lead_submit`
 
 ## Video demo
 
-La sección "Míralo en acción" reproduce `assets/veia-demo.mp4`. Descarga el video
-desde Gemini y guárdalo con ese nombre (instrucciones en `assets/COLOCA-AQUI-EL-VIDEO.md`).
-Mientras el archivo no exista, la página muestra automáticamente un botón que
-enlaza al video compartido en Gemini.
+La sección "Míralo en acción" (justo después del hero) embebe el video de YouTube
+<https://www.youtube.com/watch?v=JGwPxOTjNJg> vía `youtube-nocookie.com` con
+`loading="lazy"` (no frena la carga de la página). Para cambiar el video, solo
+reemplaza el ID en el `src` del iframe en `index.html`.
 
 ## Desplegar en Vercel paso a paso
 

@@ -102,23 +102,4 @@
     thanks.hidden = false;
     form.reset();
   });
-
-  /* ── Video demo ────────────────────────────────────────── */
-
-  // Si el archivo assets/veia-demo.mp4 aún no existe, se oculta el reproductor
-  // y se muestra el enlace al video compartido en Gemini.
-  var video = document.getElementById("demo-video");
-  var videoWrap = document.getElementById("video-wrap");
-  var videoFallback = document.getElementById("video-fallback");
-
-  if (video && videoWrap && videoFallback) {
-    video.addEventListener("error", showVideoFallback, true);
-    var source = video.querySelector("source");
-    if (source) source.addEventListener("error", showVideoFallback);
-  }
-
-  function showVideoFallback() {
-    videoWrap.hidden = true;
-    videoFallback.hidden = false;
-  }
 })();
