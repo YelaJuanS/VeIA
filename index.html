@@ -35,6 +35,20 @@
     </div>
   </header>
 
+  <!-- ══════════════════ VIDEO (lo primero que se ve) ══════════════════ -->
+  <section class="demo demo-top">
+    <div class="container demo-inner">
+      <div class="video-wrap">
+        <iframe
+          src="https://www.youtube-nocookie.com/embed/JGwPxOTjNJg"
+          title="VeIA — demo: seguimiento en tiempo real de fallas eléctricas"
+          allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          referrerpolicy="strict-origin-when-cross-origin"
+          allowfullscreen></iframe>
+      </div>
+    </div>
+  </section>
+
   <!-- ══════════════════ 1. HERO ══════════════════ -->
   <section class="hero">
     <div class="hero-glow" aria-hidden="true"></div>
@@ -48,24 +62,6 @@
       </p>
       <button class="btn btn-primary btn-lg" data-cta data-cta-location="hero">Quiero probar Ve<span class="ia-inline">IA</span></button>
       <p class="hero-note">Sin instalaciones. Funciona desde tu celular.</p>
-    </div>
-  </section>
-
-  <!-- ══════════════════ DEMO EN VIDEO ══════════════════ -->
-  <section class="demo">
-    <div class="container demo-inner">
-      <p class="section-eyebrow">Demo</p>
-      <h2>Míralo en acción</h2>
-      <p class="demo-sub">30 segundos que muestran cómo se vive un apagón con Ve<span class="ia-inline">IA</span>.</p>
-      <div class="video-wrap">
-        <iframe
-          src="https://www.youtube-nocookie.com/embed/JGwPxOTjNJg"
-          title="VeIA — demo: seguimiento en tiempo real de fallas eléctricas"
-          loading="lazy"
-          allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-          referrerpolicy="strict-origin-when-cross-origin"
-          allowfullscreen></iframe>
-      </div>
     </div>
   </section>
 
@@ -310,27 +306,80 @@
     </div>
   </footer>
 
-  <!-- ══════════════════ MODAL DE CONTACTO ══════════════════ -->
+  <!-- ══════ MODAL: DEMO INTERACTIVO — registra tu falla como en la app ══════ -->
   <div class="modal-overlay" id="modal" hidden>
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
       <button class="modal-close" id="modal-close" aria-label="Cerrar">×</button>
 
-      <form id="lead-form" novalidate>
-        <h3 id="modal-title">Prueba Ve<span class="ia-inline">IA</span> primero</h3>
-        <p class="modal-sub">Déjanos tu contacto y te escribimos para incluirte en el piloto.</p>
-        <label for="lead-name">Tu nombre</label>
-        <input type="text" id="lead-name" name="name" placeholder="Ej: Marta González" required autocomplete="name" />
-        <label for="lead-contact">WhatsApp o correo</label>
-        <input type="text" id="lead-contact" name="contact" placeholder="Ej: 300 123 4567 o marta@correo.com" required />
-        <p class="form-error" id="form-error" hidden>Por favor completa los dos campos.</p>
-        <button type="submit" class="btn btn-primary btn-block">Enviar</button>
-      </form>
+      <div class="demo-progress" id="demo-progress">
+        <span class="progress-label" id="progress-label">Paso 1 de 3</span>
+        <div class="progress-track"><span class="progress-fill" id="progress-fill"></span></div>
+      </div>
 
-      <div id="thanks" hidden>
-        <div class="thanks-icon" aria-hidden="true">⚡</div>
-        <h3>¡Gracias, te contactaremos!</h3>
-        <p class="modal-sub">Muy pronto vas a dejar de esperar a ciegas.</p>
-        <button class="btn btn-ghost btn-block" id="thanks-close">Cerrar</button>
+      <!-- Paso 1: ubicación y tipo de lugar -->
+      <div class="wizard-step" id="step-1">
+        <h3 id="modal-title">Registra tu falla</h3>
+        <p class="modal-sub">Vive la app tal como funciona. Empecemos: ¿dónde estás?</p>
+        <label for="demo-place">Barrio o sector</label>
+        <input type="text" id="demo-place" placeholder="Ej: Centro, Pasto" autocomplete="address-level2" />
+        <p class="field-label">¿Qué tipo de lugar es?</p>
+        <div class="chip-group" id="place-type" role="group" aria-label="Tipo de lugar">
+          <button type="button" class="chip" data-value="Negocio con cadena de frío">🧊 Negocio con frío</button>
+          <button type="button" class="chip" data-value="Restaurante / comercio">🍽️ Comercio</button>
+          <button type="button" class="chip" data-value="Hogar">🏠 Hogar</button>
+          <button type="button" class="chip" data-value="Carga crítica (salud / producción)">🫀 Carga crítica</button>
+        </div>
+        <p class="form-error" id="error-1" hidden>Escribe tu sector y elige el tipo de lugar.</p>
+        <button class="btn btn-primary btn-block" id="next-1">Continuar</button>
+      </div>
+
+      <!-- Paso 2: tipo de falla -->
+      <div class="wizard-step" id="step-2" hidden>
+        <h3>¿Qué está pasando?</h3>
+        <p class="modal-sub">Elige lo que mejor describe tu falla.</p>
+        <div class="option-list" id="fault-type" role="group" aria-label="Tipo de falla">
+          <button type="button" class="option" data-value="Se fue la luz por completo">⚡ Se fue la luz por completo</button>
+          <button type="button" class="option" data-value="La luz va y viene / parpadea">💡 La luz va y viene / parpadea</button>
+          <button type="button" class="option" data-value="Bajón de voltaje">📉 Bajón de voltaje — los equipos andan a medias</button>
+        </div>
+      </div>
+
+      <!-- Paso 3: contacto (aquí se capturan los datos) -->
+      <div class="wizard-step" id="step-3" hidden>
+        <h3>¿A dónde te avisamos cada avance?</h3>
+        <p class="modal-sub">Como en la app real: te notificamos la brigada asignada, en camino y la energía de vuelta.</p>
+        <label for="lead-name">Tu nombre</label>
+        <input type="text" id="lead-name" placeholder="Ej: Marta González" autocomplete="name" />
+        <label for="lead-contact">WhatsApp o correo</label>
+        <input type="text" id="lead-contact" placeholder="Ej: 300 123 4567 o marta@correo.com" />
+        <p class="form-error" id="error-3" hidden>Completa los dos campos para registrar tu falla.</p>
+        <button class="btn btn-primary btn-block" id="submit-demo">Registrar mi falla ⚡</button>
+      </div>
+
+      <!-- Paso 4: confirmación simulada, como la pantalla real de la app -->
+      <div class="wizard-step" id="step-4" hidden>
+        <p class="confirm-head"><span class="dot-live" aria-hidden="true"></span> Reporte <strong id="ticket-id">#4821</strong> confirmado</p>
+        <ol class="steps steps-demo" id="demo-steps">
+          <li class="step">
+            <span class="step-marker" aria-hidden="true">✓</span>
+            <div class="step-body"><p class="step-title">Reporte recibido y confirmado</p><p class="step-meta" id="confirm-place"></p></div>
+          </li>
+          <li class="step">
+            <span class="step-marker" aria-hidden="true">✓</span>
+            <div class="step-body"><p class="step-title">Brigada asignada</p><p class="step-meta">Brigada 7 · a 12 min de tu sector</p></div>
+          </li>
+          <li class="step">
+            <span class="step-marker" aria-hidden="true"><span class="step-pulse"></span></span>
+            <div class="step-body"><p class="step-title">En camino al punto de falla<span class="typing-dots" aria-hidden="true"><i></i><i></i><i></i></span></p></div>
+          </li>
+        </ol>
+        <div class="eta-card eta-inline" id="demo-eta" hidden>
+          <p class="eta-label">Restablecimiento estimado</p>
+          <p class="eta-time">1h 40min</p>
+          <div class="eta-bar"><span class="eta-bar-fill"></span></div>
+        </div>
+        <p class="demo-note">Esto es una simulación de la app. <strong>¡Gracias, te contactaremos</strong> para que vivas Ve<span class="ia-inline">IA</span> con tu energía real!</p>
+        <button class="btn btn-ghost btn-block" id="demo-close">Cerrar</button>
       </div>
     </div>
   </div>

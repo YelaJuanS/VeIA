@@ -48,8 +48,17 @@ Nota: GoatCounter no cuenta visitas desde `localhost`, así que tus pruebas loca
 
 | Evento | Cuándo |
 |---|---|
-| `cta_click` | Cada clic en cualquier botón "Quiero probar VeIA" (nav, hero, CTA final). Incluye la ubicación del botón. |
-| `lead_submit` | Cuando alguien envía el formulario (nombre + contacto). El dato de contacto **no** se envía a la analítica. |
+| `cta_click` | Cada clic en cualquier botón "Quiero probar VeIA" (nav, hero, CTA final). Abre el demo interactivo. Incluye la ubicación del botón. |
+| `lead_submit` | Cuando alguien completa el registro de la falla en el demo (nombre + contacto). Los datos personales **no** se envían a la analítica. |
+
+### El demo interactivo
+
+El CTA abre un flujo que simula la app real, en 3 pasos: **sector + tipo de lugar**
+→ **tipo de falla** → **contacto** ("¿a dónde te avisamos cada avance?"). Ahí se
+capturan los datos, y al final el usuario ve la pantalla de confirmación simulada:
+radicado, brigada asignada encendiéndose paso a paso y el ETA de restablecimiento.
+El lead que llega a tu correo incluye sector, tipo de lugar y tipo de falla —
+contexto valioso para priorizar a quién contactar primero.
 
 ## ¿Dónde veo los datos del formulario (leads)?
 
