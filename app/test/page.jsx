@@ -6,11 +6,23 @@ import MapMockup from "../../components/MapMockup";
 const SECONDS = 8;
 
 const QUESTIONS = [
-  { id: "q1", text: "1. ¿Qué es esto?" },
-  { id: "q2", text: "2. ¿Para quién es?" },
+  {
+    id: "q1",
+    text: "1. Con tus propias palabras, ¿qué hace lo que acabas de ver?",
+    hint: "No hay que adivinar el nombre del producto — explica qué problema resuelve, como si le contaras a un amigo qué vas a poder hacer con eso.",
+    placeholder: "Ej: Sirve para…",
+  },
+  {
+    id: "q2",
+    text: "2. ¿Quién crees que usaría esto?",
+    hint: "Piensa en una persona o negocio concreto — no hace falta que sea exacto, solo lo primero que se te ocurra.",
+    placeholder: "Ej: Alguien que…",
+  },
   {
     id: "q3",
-    text: "3. ¿En qué te hace diferente de lo que usas hoy para este problema?",
+    text: "3. Hoy, cuando se va la luz, ¿cómo te enteras de cuándo vuelve?",
+    hint: "Cuenta qué haces ahora mismo (llamar, esperar, preguntar a un vecino…) y si esto cambiaría algo de esa situación.",
+    placeholder: "Ej: Hoy yo…",
   },
 ];
 
@@ -123,11 +135,12 @@ export default function TestPage() {
             {QUESTIONS.map((q) => (
               <div className="test-question" key={q.id}>
                 <label htmlFor={q.id}>{q.text}</label>
+                <p className="test-hint">{q.hint}</p>
                 <textarea
                   id={q.id}
                   value={answers[q.id]}
                   onChange={(e) => setAnswers({ ...answers, [q.id]: e.target.value })}
-                  placeholder="Escribe aquí…"
+                  placeholder={q.placeholder}
                 />
               </div>
             ))}

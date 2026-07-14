@@ -860,8 +860,14 @@ h2 { font-size: clamp(1.6rem, 4vw, 2.4rem); margin-bottom: 1rem; }
 .test-question label {
   display: block;
   font-weight: 700;
-  margin-bottom: 0.45rem;
+  margin-bottom: 0.3rem;
   font-size: 0.98rem;
+}
+.test-hint {
+  color: var(--text-dim);
+  font-size: 0.84rem;
+  margin-bottom: 0.55rem;
+  line-height: 1.4;
 }
 .test-card textarea {
   width: 100%;
