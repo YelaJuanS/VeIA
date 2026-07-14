@@ -14,10 +14,15 @@ const QUESTIONS = [
   },
 ];
 
+const EMPTY_ANSWERS = { q1: "", q2: "", q3: "" };
+
 export default function TestPage() {
-  const [phase, setPhase] = useState("view"); // view → questions → done
+  // intro → view → questions → done. "intro" espera el clic del moderador
+  // para que el conteo no arranque mientras se explica la dinámica; "done"
+  // ofrece un botón para reiniciar y pasar a la siguiente persona.
+  const [phase, setPhase] = useState("intro");
   const [left, setLeft] = useState(SECONDS);
-  const [answers, setAnswers] = useState({ q1: "", q2: "", q3: "" });
+  const [answers, setAnswers] = useState(EMPTY_ANSWERS);
   const [error, setError] = useState("");
   const [sending, setSending] = useState(false);
 
@@ -37,6 +42,18 @@ export default function TestPage() {
     return () => clearInterval(t);
   }, [phase]);
 
+  function startTest() {
+    setLeft(SECONDS);
+    setPhase("view");
+  }
+
+  function startOver() {
+    setAnswers(EMPTY_ANSWERS);
+    setError("");
+    setLeft(SECONDS);
+    setPhase("intro");
+  }
+
   async function submit() {
     if (!answers.q1.trim() && !answers.q2.trim() && !answers.q3.trim()) {
       setError("Responde al menos una pregunta antes de enviar.");
@@ -53,12 +70,26 @@ export default function TestPage() {
     } catch {
       // La pantalla de gracias se muestra igual; el moderador puede reintentar.
     }
+    setSending(false);
     setPhase("done");
   }
 
   return (
     <main className="test-page">
       <div className="test-card">
+        {phase === "intro" && (
+          <>
+            <h1>Test de comprensión</h1>
+            <p className="modal-sub">
+              Vas a ver una pantalla durante {SECONDS} segundos. Luego te haremos 3 preguntas
+              cortas. No hay respuestas correctas — responde lo primero que pienses.
+            </p>
+            <button className="btn btn-primary btn-block" onClick={startTest}>
+              Comenzar test
+            </button>
+          </>
+        )}
+
         {phase === "view" && (
           <>
             <h1>Observa con atención</h1>
@@ -112,6 +143,9 @@ export default function TestPage() {
             <div className="thanks-icon" aria-hidden="true">⚡</div>
             <h1>¡Gracias!</h1>
             <p className="modal-sub">Tus respuestas quedaron guardadas.</p>
+            <button className="btn btn-ghost btn-block" onClick={startOver}>
+              Hacer otro test (siguiente persona)
+            </button>
           </div>
         )}
       </div>
