@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { redis, parseEntry } from "../../../lib/redis";
+import { redis, parseEntry, redisEnvDiagnostic } from "../../../lib/redis";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +15,10 @@ export async function GET(req) {
   }
   if (!redis) {
     return NextResponse.json(
-      { error: "KV no configurado. Conecta Upstash Redis (Vercel KV) al proyecto y redespliega." },
+      {
+        error: "KV no configurado. Conecta Upstash Redis (Vercel KV) al proyecto y redespliega.",
+        envVarsDetectadas: redisEnvDiagnostic(),
+      },
       { status: 503 }
     );
   }
