@@ -51,7 +51,27 @@ Nota: GoatCounter no cuenta visitas desde `localhost`, así que tus pruebas loca
 | `cta_click` | Cada clic en cualquier botón "Quiero probar VeIA" (nav, hero, CTA final). Incluye la ubicación del botón. |
 | `lead_submit` | Cuando alguien envía el formulario (nombre + contacto). El dato de contacto **no** se envía a la analítica. |
 
-> Los leads del formulario hoy solo muestran el mensaje de gracias (no hay backend). Si quieres recibirlos por correo, conecta el `<form>` a [Formspree](https://formspree.io) o similar — un solo atributo `action`.
+## ¿Dónde veo los datos del formulario (leads)?
+
+Los leads llegan **a tu correo** vía [FormSubmit](https://formsubmit.co) (gratis, sin cuenta):
+
+1. El primer envío del formulario en producción dispara un correo de **activación**
+   a `juansebastianyela@gmail.com` — abre ese correo y haz clic en **Activate**.
+2. Desde ahí, cada lead llega a tu bandeja como un correo con asunto
+   "Nuevo lead VeIA 🚀" con el nombre y el contacto en una tabla.
+3. **Recomendado**: tras activar, FormSubmit te da un *alias aleatorio*
+   (ej. `formsubmit.co/ajax/a1b2c3d4...`). Reemplaza el correo por ese alias en
+   `script.js` (constante `LEAD_ENDPOINT`) para no exponer tu email en el repo público.
+
+Además, cada envío queda contado en GoatCounter como evento `lead_submit`
+(solo el conteo — el dato de contacto nunca se envía a la analítica).
+
+## Video demo
+
+La sección "Míralo en acción" reproduce `assets/veia-demo.mp4`. Descarga el video
+desde Gemini y guárdalo con ese nombre (instrucciones en `assets/COLOCA-AQUI-EL-VIDEO.md`).
+Mientras el archivo no exista, la página muestra automáticamente un botón que
+enlaza al video compartido en Gemini.
 
 ## Desplegar en Vercel paso a paso
 

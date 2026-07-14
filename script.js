@@ -66,6 +66,11 @@
 
   /* ── Formulario ────────────────────────────────────────── */
 
+  // Los leads llegan a este correo vía FormSubmit (https://formsubmit.co).
+  // El primer envío dispara un correo de activación: haz clic en "Activate"
+  // y desde ahí cada lead llega a tu bandeja de entrada.
+  var LEAD_ENDPOINT = "https://formsubmit.co/ajax/juansebastianyela@gmail.com";
+
   form.addEventListener("submit", function (e) {
     e.preventDefault();
 
@@ -80,8 +85,40 @@
     // Registra el lead como evento (el dato de contacto NO se envía a la analítica).
     trackEvent("lead_submit", "form");
 
+    // Envía el lead al correo. No bloquea la experiencia si falla la red.
+    fetch(LEAD_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({
+        nombre: name,
+        contacto: contact,
+        _subject: "Nuevo lead VeIA 🚀",
+        _template: "table",
+        _captcha: "false",
+      }),
+    }).catch(function () { /* el lead igual quedó contado en la analítica */ });
+
     form.hidden = true;
     thanks.hidden = false;
     form.reset();
   });
+
+  /* ── Video demo ────────────────────────────────────────── */
+
+  // Si el archivo assets/veia-demo.mp4 aún no existe, se oculta el reproductor
+  // y se muestra el enlace al video compartido en Gemini.
+  var video = document.getElementById("demo-video");
+  var videoWrap = document.getElementById("video-wrap");
+  var videoFallback = document.getElementById("video-fallback");
+
+  if (video && videoWrap && videoFallback) {
+    video.addEventListener("error", showVideoFallback, true);
+    var source = video.querySelector("source");
+    if (source) source.addEventListener("error", showVideoFallback);
+  }
+
+  function showVideoFallback() {
+    videoWrap.hidden = true;
+    videoFallback.hidden = false;
+  }
 })();

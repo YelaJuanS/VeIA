@@ -209,6 +209,39 @@ h2 { font-size: clamp(1.6rem, 4vw, 2.4rem); margin-bottom: 1rem; }
 }
 .how-sub strong { color: var(--text); }
 
+/* Los 3 pasos del flujo */
+.flow {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 1.25rem;
+  max-width: 960px;
+  margin: 0 auto 2.5rem;
+}
+.flow-step {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.4rem 1.4rem 1.5rem;
+  text-align: left;
+}
+.flow-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font-weight: 800;
+  font-size: 1rem;
+  color: #04121c;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow: 0 0 16px rgba(44, 230, 168, 0.3);
+  margin-bottom: 0.85rem;
+}
+.flow-step h4 { font-size: 1.05rem; margin-bottom: 0.45rem; }
+.flow-step p { color: var(--text-dim); font-size: 0.92rem; }
+
 /* Mockup de la app: mapa + panel de seguimiento */
 .app-mockup {
   display: grid;
@@ -472,6 +505,34 @@ h2 { font-size: clamp(1.6rem, 4vw, 2.4rem); margin-bottom: 1rem; }
 .how-item h4 { font-size: 1rem; margin-bottom: 0.5rem; }
 .how-item p { color: var(--text-dim); font-size: 0.92rem; }
 
+/* ─────────────── Demo en video ─────────────── */
+.demo {
+  padding: clamp(3.5rem, 8vw, 6rem) 0;
+  text-align: center;
+}
+.demo-sub {
+  color: var(--text-dim);
+  max-width: 480px;
+  margin: 0 auto 2rem;
+}
+.video-wrap {
+  max-width: 380px;
+  margin: 0 auto;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: #0a1220;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5), 0 0 50px rgba(53, 200, 255, 0.07);
+}
+.video-wrap video {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 9 / 16;
+  background: #0a1220;
+}
+.video-wrap[hidden] { display: none; }
+
 /* ─────────────── Operadores de Red ─────────────── */
 .operators { padding: clamp(3.5rem, 8vw, 6rem) 0; }
 .operators-inner {
@@ -596,14 +657,17 @@ h2 { font-size: clamp(1.6rem, 4vw, 2.4rem); margin-bottom: 1rem; }
 }
 
 @media (max-width: 560px) {
+  /* En celular la tarjeta de ETA deja de flotar sobre el mapa:
+     pasa debajo del mapa, a ancho completo, sin tapar nada. */
   .eta-card {
-    left: 0.6rem;
-    right: 0.6rem;
-    bottom: 0.6rem;
+    position: static;
+    margin: 0.75rem;
     min-width: 0;
-    padding: 0.7rem 0.9rem;
+    padding: 0.8rem 1rem;
+    backdrop-filter: none;
+    background: var(--bg-raised);
   }
-  .eta-time { font-size: 1.5rem; }
+  .eta-time { font-size: 1.6rem; }
   .btn-nav { padding: 0.5rem 0.9rem; font-size: 0.82rem; }
   .logo { font-size: 1.3rem; }
 }
