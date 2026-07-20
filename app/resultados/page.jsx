@@ -110,6 +110,7 @@ function summarizeMvpSession(id, evs) {
     lugar: report?.data?.lugar || "",
     alcance: report?.data?.alcance || "",
     origenUbicacion: report?.data?.origenUbicacion || "",
+    geoStatus: find("geo_result")?.data?.status || "",
     cambioZona: evs.some((e) => e.type === "location_changed"),
     canal: start?.data?.canal || "directo",
     notifyOn,
@@ -521,6 +522,7 @@ export default function ResultadosPage() {
                       <th>Sesión</th>
                       <th>Participante</th>
                       <th>Ubicación del reporte</th>
+                      <th>Permiso GPS</th>
                       <th>Alcance</th>
                       <th>Inicio</th>
                       <th className="num">Time-to-value</th>
@@ -547,6 +549,7 @@ export default function ResultadosPage() {
                             <span className="res-tag">otra zona</span>
                           )}
                         </td>
+                        <td>{s.geoStatus || "—"}</td>
                         <td>{s.alcance || "—"}</td>
                         <td>{s.startTs ? new Date(s.startTs).toLocaleString() : "—"}</td>
                         <td className="num">{fmtSec(s.timeToValueMs)}</td>
