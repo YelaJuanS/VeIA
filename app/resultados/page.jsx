@@ -47,6 +47,134 @@ function buildCsv(data) {
   return rows.join("\n");
 }
 
+/* ─────────────── MVP S7 — test de usabilidad ─────────────── */
+
+const MVP_SCREENS = ["inicio", "reporte", "mapa", "detalle"];
+const MVP_SCREEN_LABELS = {
+  inicio: "Entrada",
+  reporte: "Reporte",
+  mapa: "Mapa vivo",
+  detalle: "Detalle",
+};
+
+// Dedupe por id (sendBeacon + fetch pueden duplicar) y orden cronológico.
+function dedupeMvpEvents(events) {
+  const seen = new Set();
+  const out = [];
+  for (const e of events || []) {
+    if (!e || !e.type) continue;
+    if (e.id) {
+      if (seen.has(e.id)) continue;
+      seen.add(e.id);
+    }
+    out.push(e);
+  }
+  return out;
+}
+
+function summarizeMvpSession(id, evs) {
+  evs.sort((a, b) => (Number(a.t) || 0) - (Number(b.t) || 0));
+  const find = (t) => evs.find((e) => e.type === t);
+  const count = (t) => evs.filter((e) => e.type === t).length;
+  const start = find("task_start");
+  const value = find("value_moment_reached");
+  const complete = find("task_complete");
+  const abandon = find("task_abandon");
+  const feedback = find("feedback");
+
+  // Permanencia por pantalla (suma de screen_view)
+  const dwell = {};
+  for (const e of evs) {
+    if (e.type !== "screen_view") continue;
+    const s = e.data?.screen || e.screen;
+    if (s) dwell[s] = (dwell[s] || 0) + (Number(e.data?.durationMs) || 0);
+  }
+  let topScreen = "—";
+  let topMs = 0;
+  for (const [s, ms] of Object.entries(dwell)) {
+    if (ms > topMs) { topScreen = s; topMs = ms; }
+  }
+
+  const lastT = evs.reduce((m, e) => Math.max(m, Number(e.t) || 0), 0);
+  return {
+    id,
+    startTs: start?.ts || evs[0]?.ts || "",
+    reachedValue: !!value,
+    timeToValueMs: value ? Number(value.data?.timeToValueMs) || null : null,
+    outcome: complete ? "completada" : abandon ? "abandonada" : "incompleta",
+    backtracks: count("backtrack"),
+    deadTaps: count("dead_tap"),
+    hesitations: count("hesitation"),
+    topScreen,
+    topMs,
+    totalMs: (complete && Number(complete.data?.totalMs)) || lastT,
+    screensVisited: new Set(
+      evs.map((e) => e.screen).filter((s) => MVP_SCREENS.includes(s))
+    ),
+    feedback: feedback ? feedback.data : null,
+    events: evs,
+  };
+}
+
+function groupMvpSessions(events) {
+  const by = new Map();
+  for (const e of dedupeMvpEvents(events)) {
+    if (!e.sessionId) continue;
+    if (!by.has(e.sessionId)) by.set(e.sessionId, []);
+    by.get(e.sessionId).push(e);
+  }
+  const sessions = Array.from(by, ([id, evs]) => summarizeMvpSession(id, evs));
+  sessions.sort((a, b) => (a.startTs || "").localeCompare(b.startTs || ""));
+  return sessions;
+}
+
+// Fricción agregada por pantalla: hesitaciones + dead_taps.
+function mvpFrictionByScreen(sessions) {
+  const f = {};
+  for (const s of sessions) {
+    for (const e of s.events) {
+      if (e.type !== "hesitation" && e.type !== "dead_tap") continue;
+      const sc = e.data?.screen || e.screen || "?";
+      f[sc] = (f[sc] || 0) + 1;
+    }
+  }
+  return f;
+}
+
+function median(nums) {
+  const a = nums.filter((n) => Number.isFinite(n)).sort((x, y) => x - y);
+  if (!a.length) return null;
+  const mid = Math.floor(a.length / 2);
+  return a.length % 2 ? a[mid] : (a[mid - 1] + a[mid]) / 2;
+}
+
+function fmtSec(ms) {
+  if (ms == null || !Number.isFinite(ms)) return "—";
+  return (ms / 1000).toFixed(1).replace(".", ",") + " s";
+}
+
+// CSV crudo de eventos del MVP, una fila por evento.
+function buildMvpCsv(events) {
+  const cols = [
+    "sessionId", "type", "ts", "t_ms", "screen", "targetId",
+    "interactive", "duration_ms", "from", "to", "extra",
+  ];
+  const rows = [cols.join(",")];
+  for (const e of dedupeMvpEvents(events)) {
+    const d = e.data || {};
+    const { targetId, interactive, durationMs, from, to, ...rest } = d;
+    rows.push(
+      [
+        e.sessionId, e.type, e.ts, e.t, e.screen,
+        targetId ?? "", interactive ?? "", durationMs ?? "",
+        from ?? "", to ?? "",
+        Object.keys(rest).length ? JSON.stringify(rest) : "",
+      ].map(csvEscape).join(",")
+    );
+  }
+  return rows.join("\n");
+}
+
 export default function ResultadosPage() {
   const [pw, setPw] = useState("");
   const [data, setData] = useState(null);
@@ -92,6 +220,21 @@ export default function ResultadosPage() {
       </main>
     );
   }
+
+  const mvpEvents = data.mvp?.events || [];
+  const mvpSessions = groupMvpSessions(mvpEvents);
+  const mvpReached = mvpSessions.filter((s) => s.reachedValue);
+  const mvpCompleted = mvpSessions.filter((s) => s.outcome === "completada");
+  const mvpTtvMedian = median(mvpReached.map((s) => s.timeToValueMs));
+  const mvpFriction = mvpFrictionByScreen(mvpSessions);
+  const mvpFrictionTop = Object.entries(mvpFriction).sort((a, b) => b[1] - a[1])[0];
+  const funnel = [
+    ...MVP_SCREENS.map((sc) => ({
+      label: MVP_SCREEN_LABELS[sc],
+      n: mvpSessions.filter((s) => s.screensVisited.has(sc)).length,
+    })),
+    { label: "Completó", n: mvpCompleted.length },
+  ];
 
   // Une los canales vistos en visitas y en clics.
   const canales = Array.from(
@@ -218,6 +361,132 @@ export default function ResultadosPage() {
               <p><strong>¿En qué es diferente?</strong> {t.q3 || "—"}</p>
             </div>
           ))}
+        </section>
+
+        <section className="res-section">
+          <h2>MVP S7 — Test de usabilidad ({mvpSessions.length} participantes)</h2>
+
+          {mvpSessions.length === 0 && (
+            <p className="res-empty">Aún no hay sesiones del MVP.</p>
+          )}
+
+          {mvpSessions.length > 0 && (
+            <>
+              <div className="kpis">
+                <div className="kpi">
+                  <p className="kpi-label">Llegaron al valor</p>
+                  <p className="kpi-value">
+                    {mvpReached.length}/{mvpSessions.length}
+                  </p>
+                </div>
+                <div className="kpi">
+                  <p className="kpi-label">Time-to-value mediano</p>
+                  <p className="kpi-value">{fmtSec(mvpTtvMedian)}</p>
+                </div>
+                <div className="kpi">
+                  <p className="kpi-label">Completaron</p>
+                  <p className="kpi-value">
+                    {mvpCompleted.length}/{mvpSessions.length}
+                  </p>
+                </div>
+                <div className="kpi">
+                  <p className="kpi-label">Pantalla con más fricción</p>
+                  <p className="kpi-value kpi-value-sm">
+                    {mvpFrictionTop
+                      ? `${MVP_SCREEN_LABELS[mvpFrictionTop[0]] || mvpFrictionTop[0]} (${mvpFrictionTop[1]})`
+                      : "—"}
+                  </p>
+                </div>
+              </div>
+
+              <h3 className="res-subhead">Embudo del flujo</h3>
+              <div className="mvp-funnel">
+                {funnel.map((f) => (
+                  <div className="mvp-funnel-row" key={f.label}>
+                    <span className="mvp-funnel-label">{f.label}</span>
+                    <span className="mvp-funnel-track">
+                      <span
+                        className="mvp-funnel-fill"
+                        style={{
+                          width: `${mvpSessions.length ? (f.n / mvpSessions.length) * 100 : 0}%`,
+                        }}
+                      ></span>
+                    </span>
+                    <span className="mvp-funnel-n">{f.n}</span>
+                  </div>
+                ))}
+              </div>
+
+              <h3 className="res-subhead">Por participante</h3>
+              <div className="res-table-wrap">
+                <table className="res-table">
+                  <thead>
+                    <tr>
+                      <th>Sesión</th>
+                      <th>Inicio</th>
+                      <th className="num">Time-to-value</th>
+                      <th>¿Valor?</th>
+                      <th>Resultado</th>
+                      <th className="num">Backtracks</th>
+                      <th className="num">Dead taps</th>
+                      <th className="num">Hesitaciones</th>
+                      <th>Mayor permanencia</th>
+                      <th className="num">Duración</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {mvpSessions.map((s) => (
+                      <tr key={s.id}>
+                        <td>{s.id.slice(0, 8)}</td>
+                        <td>{s.startTs ? new Date(s.startTs).toLocaleString() : "—"}</td>
+                        <td className="num">{fmtSec(s.timeToValueMs)}</td>
+                        <td>{s.reachedValue ? "Sí" : "No"}</td>
+                        <td>{s.outcome}</td>
+                        <td className="num">{s.backtracks}</td>
+                        <td className="num">{s.deadTaps}</td>
+                        <td className="num">{s.hesitations}</td>
+                        <td>
+                          {s.topScreen !== "—"
+                            ? `${MVP_SCREEN_LABELS[s.topScreen] || s.topScreen} (${fmtSec(s.topMs)})`
+                            : "—"}
+                        </td>
+                        <td className="num">{fmtSec(s.totalMs)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <h3 className="res-subhead">Feedback cualitativo</h3>
+              {mvpSessions.filter((s) => s.feedback).length === 0 && (
+                <p className="res-empty">Aún no hay respuestas de feedback.</p>
+              )}
+              {mvpSessions
+                .filter((s) => s.feedback)
+                .map((s) => (
+                  <div className="res-answer" key={s.id}>
+                    <p className="res-answer-head">
+                      Sesión {s.id.slice(0, 8)} ·{" "}
+                      {s.startTs ? new Date(s.startTs).toLocaleString() : "—"}
+                    </p>
+                    <p><strong>¿Cómo te sentiste?</strong> {s.feedback.q1 || "—"}</p>
+                    <p><strong>Más / menos claro:</strong> {s.feedback.q2 || "—"}</p>
+                    <p><strong>¿Qué valor le encuentras?</strong> {s.feedback.q3 || "—"}</p>
+                  </div>
+                ))}
+
+              <div className="res-actions">
+                <button
+                  className="btn btn-ghost"
+                  onClick={() =>
+                    download("veia-mvp-eventos.csv", buildMvpCsv(mvpEvents), "text/csv")
+                  }
+                >
+                  Descargar CSV eventos MVP
+                </button>
+              </div>
+            </>
+          )}
         </section>
       </div>
     </main>

@@ -10,8 +10,10 @@ visitas por canal, clics en el CTA, contactos, y un test cualitativo de comprens
 |---|---|
 | `/` | La landing. Acepta `?canal=...` o `?utm_source=...` para atribuir el tráfico. |
 | `/test` | **Ruta oculta** para el test de comprensión: muestra el prototipo 16 segundos (con temporizador visible), lo oculta y hace 3 preguntas abiertas. |
-| `/resultados` | Panel protegido con contraseña: visitas, clics, tasa de conversión global y por canal, contactos, respuestas del test, y descarga JSON/CSV. |
-| `/api/*` | Funciones serverless: `visit`, `cta`, `lead`, `test-response`, `results`. |
+| `/mvp` | **Ruta oculta** del MVP interactivo (S7): flujo navegable de 4 pantallas hasta el momento de valor. Ver sección dedicada abajo. |
+| `/feedback` | 3 preguntas cualitativas tras completar `/mvp`, ligadas a la sesión del participante. |
+| `/resultados` | Panel protegido con contraseña: visitas, clics, tasa de conversión global y por canal, contactos, respuestas del test, **sección MVP S7** (tabla por participante, embudo, feedback), y descarga JSON/CSV. |
+| `/api/*` | Funciones serverless: `visit`, `cta`, `lead`, `test-response`, `track`, `results`. |
 
 **Contraseña de `/resultados`: `veia2026`** (cámbiala con la variable de entorno
 `RESULTS_PASSWORD` en Vercel, sin tocar código).
@@ -27,6 +29,8 @@ Todo queda en Redis (Vercel KV):
 | `log:visits`, `log:cta` | Eventos crudos con timestamp y canal |
 | `log:leads` | Contactos: nombre, WhatsApp/correo, sector, tipo de lugar, tipo de falla, canal |
 | `log:test` | Respuestas del test cualitativo con timestamp |
+| `log:mvp:events` | Eventos crudos del MVP interactivo (S7) — ver sección abajo |
+| `stats:mvp:sessions` | Set con los sessionId que iniciaron el flujo `/mvp` |
 
 El clic en el CTA se registra **antes** de mostrar el formulario: si no lo completan,
 el clic ya quedó contado. La métrica clave (`CTA_CLICKS / VISITAS`) se calcula sola
@@ -35,6 +39,74 @@ en `/resultados`, global y por canal.
 > Respaldo: cada contacto también se envía por correo vía FormSubmit (ver
 > `MAIL_ENDPOINT` en `components/Landing.jsx`; el primer envío requiere hacer clic
 > en el correo de activación de FormSubmit).
+
+## MVP interactivo (S7) — test de usabilidad
+
+S6 validó que el usuario **quiere** el concepto. S7 pregunta algo distinto: ¿puede el
+usuario **acceder de verdad** al valor prometido navegando la interfaz solo, sin
+instrucciones? `/mvp` es un prototipo de 4 pantallas que lleva del punto de entrada
+al momento de valor:
+
+1. **Entrada** — el usuario detecta que no tiene luz y abre la app.
+2. **Reporte** — el sistema "reconoce" la falla en su sector; confirmación de 1 tap,
+   sin formularios.
+3. **Momento de valor** — mapa en vivo: la brigada se mueve hacia la falla, el ETA
+   decrece, se muestra el estado ("Cuadrilla en camino" → "Diagnóstico en sitio") y
+   la naturaleza del daño.
+4. **Detalle** — qué pasó, quién atiende, ETA actualizado, timeline paso a paso.
+
+No hay texto en pantalla que explique la tarea ni botones "siguiente" fuera del
+flujo natural: el objetivo es observar si la persona llega sola.
+
+### Qué está simulado (honestidad)
+
+**Todo** el contenido de `/mvp` es una simulación client-side — no hay brigadas,
+GPS ni fallas reales detrás. La geometría de la ruta, la posición de la falla, el
+ETA inicial y su velocidad de decremento, el guion de texto (sector, causa,
+brigada) y el "reconocimiento" del reporte están definidos en
+[`lib/mvp-config.js`](lib/mvp-config.js) y no en ningún backend. La camioneta del
+mapa (`components/LiveMap.jsx`) se mueve interpolando su posición sobre una ruta
+SVG fija en función del ETA restante — es una animación conducida por estado de
+React, no una fuente de datos real.
+
+### Instrumentación — qué se mide
+
+El módulo [`lib/tracker.js`](lib/tracker.js) genera un `sessionId` (UUID) por
+carga de `/mvp` y envía eventos en lote a `POST /api/track`, persistidos en
+`log:mvp:events`:
+
+| Evento | Cuándo se dispara | Qué mide |
+|---|---|---|
+| `task_start` | Al entrar a `/mvp` | Arranque de la sesión/tarea |
+| `screen_view` | Al salir de cada pantalla | Tiempo de permanencia (`durationMs`), para ver dónde se atasca |
+| `tap` | Cada clic/tap | Elemento objetivo e interactividad — taps en zonas no interactivas delatan confusión |
+| `value_moment_reached` | Al permanecer en el mapa más de `valueMomentSeconds` | Que reconoció el momento de valor; incluye `timeToValueMs` desde `task_start` |
+| `hesitation` | Al superar `hesitationSeconds` en una pantalla sin avanzar | Fricción / duda |
+| `backtrack` | Al retroceder (botón "‹ Mapa" o atrás del navegador) | Flujo no intuitivo |
+| `dead_tap` | Al tocar repetidamente algo no interactivo | Expectativa de interactividad no cumplida |
+| `task_complete` / `task_abandon` | Botón "Finalizar seguimiento" / cierre de pestaña antes de terminar | Si llegó al valor o se rindió |
+| `feedback` | Envío del formulario en `/feedback` | Las 3 respuestas cualitativas, ligadas al `sessionId` |
+
+Todos los umbrales (segundos para `value_moment_reached`, segundos de
+`hesitation`, cantidad/ventana de taps para `dead_tap`) están centralizados en
+`TRACKING` dentro de `lib/mvp-config.js` — cambiarlos no requiere tocar la lógica
+del tracker ni de las pantallas.
+
+### Protocolo del facilitador
+
+1. Enviar `https://TU-DOMINIO.vercel.app/mvp` al participante (no está enlazado
+   desde la landing) y dejarlo navegar sin guiarlo. La consigna verbal es una
+   sola frase: *"Se acaba de ir la luz en tu casa. Averigua qué está pasando y
+   cuándo volverá."*
+2. Al terminar (botón "Finalizar seguimiento"), el participante llega solo a
+   `/feedback` y responde 3 preguntas abiertas.
+3. Para el siguiente participante: botón **"Siguiente participante"** en
+   `/feedback`, o simplemente recargar `/mvp` — cada carga genera un `sessionId`
+   nuevo automáticamente, no hace falta borrar nada.
+4. Revisar resultados en `/resultados`, sección **"MVP S7"**: tabla por
+   participante (time-to-value, ¿llegó al valor?, completada/abandonada,
+   backtracks, dead taps, pantalla con más permanencia), embudo agregado,
+   feedback cualitativo, y botón para exportar el CSV crudo de eventos.
 
 ## Despliegue paso a paso
 

@@ -33,6 +33,8 @@ export async function GET(req) {
       test,
       logVisits,
       logCta,
+      mvpEvents,
+      mvpSessions,
     ] = await Promise.all([
       redis.get("stats:visits:total"),
       redis.get("stats:cta:total"),
@@ -42,6 +44,8 @@ export async function GET(req) {
       redis.lrange("log:test", 0, -1),
       redis.lrange("log:visits", 0, -1),
       redis.lrange("log:cta", 0, -1),
+      redis.lrange("log:mvp:events", 0, -1),
+      redis.scard("stats:mvp:sessions"),
     ]);
 
     return NextResponse.json({
@@ -59,6 +63,10 @@ export async function GET(req) {
       logs: {
         visits: (logVisits || []).map(parseEntry),
         cta: (logCta || []).map(parseEntry),
+      },
+      mvp: {
+        sessions: Number(mvpSessions) || 0,
+        events: (mvpEvents || []).map(parseEntry),
       },
     });
   } catch (e) {
