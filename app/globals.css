@@ -1249,18 +1249,32 @@ h2 { font-size: clamp(1.6rem, 4vw, 2.4rem); margin-bottom: 1rem; }
 }
 .mvp-field .chip-group { margin-bottom: 0; }
 
-.mvp-geo-btn {
-  margin-top: 0.5rem;
-  background: none;
-  border: none;
-  color: var(--accent);
-  font-family: inherit;
-  font-size: 0.85rem;
-  font-weight: 700;
-  cursor: pointer;
-  padding: 0.2rem 0;
+/* Ubicación detectada por la app (no se pide escribirla) */
+.mvp-geo-card {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.8rem 0.9rem;
+  margin-bottom: 1rem;
 }
-.mvp-geo-btn:hover { text-decoration: underline; }
+.mvp-geo-icon { font-size: 1.1rem; flex: none; }
+.mvp-geo-body { min-width: 0; flex: 1; }
+.mvp-geo-address { font-weight: 700; font-size: 0.95rem; line-height: 1.3; }
+.mvp-geo-sector { color: var(--text-dim); font-size: 0.8rem; }
+.mvp-geo-badge {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+}
 
 .mvp-reported-place {
   color: var(--text-dim);

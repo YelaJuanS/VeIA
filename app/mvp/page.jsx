@@ -23,10 +23,11 @@ export default function MvpPage() {
   const [confirming, setConfirming] = useState(false);
   // Datos que el propio participante registra en la pantalla de reporte.
   const [nombre, setNombre] = useState("");
-  const [lugar, setLugar] = useState("");
   const [alcance, setAlcance] = useState("");
-  const [usedGeo, setUsedGeo] = useState(false);
   const [formError, setFormError] = useState("");
+  // La ubicación no se pide: la app la "detecta" (simulada). Quitar ese campo
+  // libre elimina fricción justo en el paso previo al momento de valor.
+  const lugar = `${SCENARIO.detectedAddress} · ${SCENARIO.sector}`;
   // Milisegundos transcurridos del trayecto simulado. Un solo reloj alimenta
   // la posición de la camioneta (continua) y el ETA en pantalla (en minutos).
   const [travelMs, setTravelMs] = useState(0);
@@ -83,33 +84,20 @@ export default function MvpPage() {
   // con lo que la persona efectivamente escribió.
   function confirmReport() {
     const n = nombre.trim();
-    const l = lugar.trim();
-    if (!n || !l || !alcance) {
+    if (!n || !alcance) {
       setFormError(
-        !n
-          ? "Falta tu nombre."
-          : !l
-          ? "Falta el lugar de la falla."
-          : "Cuéntanos qué ves a tu alrededor."
+        !n ? "Falta tu nombre." : "Cuéntanos si el corte es solo tuyo o del sector."
       );
       return;
     }
     setFormError("");
     tracker.track("report_submitted", {
       nombre: n.slice(0, 80),
-      lugar: l.slice(0, 120),
+      lugar: lugar.slice(0, 120),
       alcance,
-      usedGeo,
     });
     setConfirming(true);
     setTimeout(() => goTo("mapa"), 1200);
-  }
-
-  // Autocompleta el lugar con la ubicación "detectada" (simulada).
-  function useMyLocation() {
-    setLugar(SCENARIO.sector);
-    setUsedGeo(true);
-    setFormError("");
   }
 
   const firstName = nombre.trim().split(/\s+/)[0] || "";
@@ -227,29 +215,16 @@ export default function MvpPage() {
                   />
                 </div>
 
-                <div className="mvp-field">
-                  <label htmlFor="rep-lugar">¿Dónde está la falla?</label>
-                  <input
-                    id="rep-lugar"
-                    type="text"
-                    autoComplete="off"
-                    placeholder="Dirección o barrio"
-                    value={lugar}
-                    data-track-id="campo-lugar"
-                    data-interactive="true"
-                    onChange={(e) => {
-                      setLugar(e.target.value);
-                      setUsedGeo(false);
-                    }}
-                  />
-                  <button
-                    className="mvp-geo-btn"
-                    data-track-id="btn-usar-ubicacion"
-                    data-interactive="true"
-                    onClick={useMyLocation}
-                  >
-                    <span aria-hidden="true">📍</span> Usar mi ubicación actual
-                  </button>
+                {/* La dirección no se escribe: la app la detecta (simulada) */}
+                <div className="mvp-geo-card" data-track-id="ubicacion-detectada">
+                  <span className="mvp-geo-icon" aria-hidden="true">📍</span>
+                  <div className="mvp-geo-body">
+                    <p className="mvp-geo-address">{SCENARIO.detectedAddress}</p>
+                    <p className="mvp-geo-sector">{SCENARIO.sector}</p>
+                  </div>
+                  <span className="mvp-geo-badge">
+                    <span className="dot-live" aria-hidden="true"></span> detectada
+                  </span>
                 </div>
 
                 <div className="mvp-field">

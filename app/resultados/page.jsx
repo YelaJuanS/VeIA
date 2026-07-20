@@ -102,7 +102,6 @@ function summarizeMvpSession(id, evs) {
     nombre: report?.data?.nombre || "",
     lugar: report?.data?.lugar || "",
     alcance: report?.data?.alcance || "",
-    usedGeo: report?.data?.usedGeo === true || report?.data?.usedGeo === "true",
     startTs: start?.ts || evs[0]?.ts || "",
     reachedValue: !!value,
     timeToValueMs: value ? Number(value.data?.timeToValueMs) || null : null,
@@ -431,7 +430,7 @@ export default function ResultadosPage() {
                     <tr>
                       <th>Sesión</th>
                       <th>Participante</th>
-                      <th>Lugar reportado</th>
+                      <th>Ubicación detectada</th>
                       <th>Alcance</th>
                       <th>Inicio</th>
                       <th className="num">Time-to-value</th>
@@ -449,10 +448,7 @@ export default function ResultadosPage() {
                       <tr key={s.id}>
                         <td>{s.id.slice(0, 8)}</td>
                         <td>{s.nombre || "—"}</td>
-                        <td>
-                          {s.lugar || "—"}
-                          {s.usedGeo && <span className="res-tag">ubicación</span>}
-                        </td>
+                        <td>{s.lugar || "—"}</td>
                         <td>{s.alcance || "—"}</td>
                         <td>{s.startTs ? new Date(s.startTs).toLocaleString() : "—"}</td>
                         <td className="num">{fmtSec(s.timeToValueMs)}</td>
