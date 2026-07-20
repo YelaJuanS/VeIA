@@ -21,7 +21,9 @@ export default function MvpPage() {
   const rootRef = useRef(null);
   const [screen, setScreen] = useState("inicio");
   const [confirming, setConfirming] = useState(false);
-  const [etaMin, setEtaMin] = useState(SCENARIO.etaInitialMin);
+  // Milisegundos transcurridos del trayecto simulado. Un solo reloj alimenta
+  // la posición de la camioneta (continua) y el ETA en pantalla (en minutos).
+  const [travelMs, setTravelMs] = useState(0);
   const [simOn, setSimOn] = useState(false);
 
   // Sesión + taps + botón "atrás" del navegador/teléfono.
@@ -49,11 +51,17 @@ export default function MvpPage() {
     if (screen === "mapa" && !simOn) setSimOn(true);
   }, [screen, simOn]);
 
+  // Reloj del trayecto: avanza en pasos cortos (mapTickMs) para que la
+  // camioneta se mueva de forma continua y su llegada sea perceptible, en vez
+  // de saltar una vez por minuto simulado.
   useEffect(() => {
     if (!simOn) return;
+    const startedAt = Date.now();
     const t = setInterval(() => {
-      setEtaMin((m) => (m > SCENARIO.arrivalHoldMin ? m - 1 : m));
-    }, SCENARIO.etaTickMs);
+      const elapsed = Date.now() - startedAt;
+      setTravelMs(Math.min(elapsed, SCENARIO.travelDurationMs));
+      if (elapsed >= SCENARIO.travelDurationMs) clearInterval(t);
+    }, SCENARIO.mapTickMs);
     return () => clearInterval(t);
   }, [simOn]);
 
@@ -74,17 +82,15 @@ export default function MvpPage() {
     router.push("/feedback");
   }
 
-  const arrived = etaMin <= SCENARIO.arrivalHoldMin;
-  const minsToSite = etaMin - SCENARIO.arrivalHoldMin;
-  const progress = Math.min(
-    Math.max(
-      (SCENARIO.etaInitialMin - etaMin) /
-        (SCENARIO.etaInitialMin - SCENARIO.arrivalHoldMin),
-      0
-    ),
-    1
-  );
-  const status = statusFor(etaMin);
+  // Avance continuo del trayecto (0→1) y ETA derivado de él.
+  const progress = Math.min(Math.max(travelMs / SCENARIO.travelDurationMs, 0), 1);
+  const etaExact =
+    SCENARIO.etaInitialMin -
+    progress * (SCENARIO.etaInitialMin - SCENARIO.arrivalHoldMin);
+  const etaMin = Math.max(Math.ceil(etaExact), SCENARIO.arrivalHoldMin);
+  const arrived = progress >= 1;
+  const minsToSite = Math.max(etaMin - SCENARIO.arrivalHoldMin, 0);
+  const status = statusFor(arrived ? SCENARIO.arrivalHoldMin : etaMin);
   const etaLabel =
     etaMin >= 60
       ? `${Math.floor(etaMin / 60)}h ${String(etaMin % 60).padStart(2, "0")}min`
@@ -203,7 +209,37 @@ export default function MvpPage() {
                 {arrived ? "brigada en el sitio" : `a ${minsToSite} min del sitio`}
               </p>
             </div>
-            <LiveMap progress={progress} etaMin={etaMin} statusLabel={status} />
+            <LiveMap
+              progress={progress}
+              etaMin={etaMin}
+              statusLabel={status}
+              arrived={arrived}
+            />
+
+            {/* Quién atiende: ponerle nombre a la cuadrilla es parte del valor
+                (pasa de "alguien vendrá" a "Andrés viene en camino"). */}
+            <div className="mvp-crew-card" data-track-id="tarjeta-cuadrilla">
+              <span className="mvp-crew-avatar" aria-hidden="true">
+                {SCENARIO.brigadeLeadInitials}
+              </span>
+              <div className="mvp-crew-info">
+                <p className="mvp-crew-name">{SCENARIO.brigadeLead}</p>
+                <p className="mvp-crew-role">
+                  {SCENARIO.brigadeLeadRole} · {SCENARIO.brigadeName}
+                </p>
+              </div>
+              <span className="mvp-crew-plate">{SCENARIO.brigadeVehicle}</span>
+            </div>
+
+            {/* Qué pasó: la causa se muestra aquí mismo, no escondida en otra
+                pantalla — es la mitad de la respuesta que vino a buscar. */}
+            <div className="cause-card mvp-cause">
+              <p className="cause-label">
+                <span aria-hidden="true">⚡</span> ¿Qué pasó?
+              </p>
+              <p className="cause-text">{SCENARIO.causeText}</p>
+            </div>
+
             <button
               className="btn btn-ghost btn-block mvp-detail-btn"
               data-track-id="btn-detalle"
@@ -244,12 +280,16 @@ export default function MvpPage() {
             </div>
 
             <div className="mvp-brigade" data-track-id="tarjeta-brigada">
-              <span className="mvp-brigade-icon" aria-hidden="true">🛠️</span>
+              <span className="mvp-crew-avatar" aria-hidden="true">
+                {SCENARIO.brigadeLeadInitials}
+              </span>
               <div>
-                <p className="mvp-brigade-name">
-                  {SCENARIO.brigadeName} · {SCENARIO.brigadeVehicle}
+                <p className="mvp-brigade-name">{SCENARIO.brigadeLead}</p>
+                <p className="mvp-brigade-meta">
+                  {SCENARIO.brigadeLeadRole} · {SCENARIO.brigadeName} ·{" "}
+                  {SCENARIO.brigadeCrewSize} técnicos
                 </p>
-                <p className="mvp-brigade-meta">{SCENARIO.brigadeLead}</p>
+                <p className="mvp-brigade-meta">{SCENARIO.brigadeLeadMeta}</p>
               </div>
             </div>
 
@@ -265,7 +305,9 @@ export default function MvpPage() {
                 <span className="step-marker" aria-hidden="true">✓</span>
                 <div className="step-body">
                   <p className="step-title">Brigada asignada</p>
-                  <p className="step-meta">{SCENARIO.brigadeName}</p>
+                  <p className="step-meta">
+                    {SCENARIO.brigadeLead} · {SCENARIO.brigadeName}
+                  </p>
                 </div>
               </li>
               <li className={arrived ? "step done" : "step active"}>

@@ -1,17 +1,25 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 import { SCENARIO } from "../lib/mvp-config";
 
 // Mapa "en vivo" del MVP: mismo vocabulario visual que MapMockup, pero la
 // camioneta NO usa animateMotion — su posición sobre la ruta se calcula desde
-// el estado React (progress 0→1, derivado del ETA simulado en /mvp). Es una
+// el estado React (progress 0→1, que avanza de forma continua en /mvp). Es una
 // simulación: no hay GPS ni datos reales detrás.
-export default function LiveMap({ progress = 0, etaMin, statusLabel }) {
+
+// Primer punto de la ruta, para que la camioneta ya esté colocada en el primer
+// paint (sin él aparecería un instante en el origen del viewBox).
+const START = SCENARIO.crewRoute.match(/M\s*([\d.]+)[\s,]+([\d.]+)/);
+const START_TRANSFORM = START ? `translate(${START[1]},${START[2]})` : undefined;
+
+export default function LiveMap({ progress = 0, etaMin, statusLabel, arrived = false }) {
   const pathRef = useRef(null);
   const crewRef = useRef(null);
 
-  useEffect(() => {
+  // useLayoutEffect: coloca la camioneta antes de que el navegador pinte, así
+  // no se ve saltar desde la posición anterior en el primer render.
+  useLayoutEffect(() => {
     const path = pathRef.current;
     const crew = crewRef.current;
     if (!path || !crew) return;
@@ -30,9 +38,8 @@ export default function LiveMap({ progress = 0, etaMin, statusLabel }) {
     etaMin >= 60
       ? `${Math.floor(etaMin / 60)}h ${String(etaMin % 60).padStart(2, "0")}min`
       : `${etaMin} min`;
-  const barPct = Math.round(
-    Math.min(Math.max((SCENARIO.etaInitialMin - etaMin) / SCENARIO.etaInitialMin, 0.04), 1) * 100
-  );
+  // La barra mide el avance del trayecto, no el ETA absoluto.
+  const barPct = Math.round(Math.min(Math.max(progress, 0.04), 1) * 100);
 
   return (
     <div
@@ -74,7 +81,7 @@ export default function LiveMap({ progress = 0, etaMin, statusLabel }) {
         </g>
         <path ref={pathRef} className="route" d={SCENARIO.crewRoute} />
         <g
-          className="fault"
+          className={arrived ? "fault fault-working" : "fault"}
           transform={`translate(${SCENARIO.fault.x},${SCENARIO.fault.y})`}
         >
           <circle className="fault-pulse" r="14" />
@@ -82,7 +89,11 @@ export default function LiveMap({ progress = 0, etaMin, statusLabel }) {
         </g>
         {/* Camioneta de brigada (vista superior, estilo Uber). Apunta a +x;
             el rotate del transform la orienta según la ruta. */}
-        <g ref={crewRef} className="crew crew-live">
+        <g
+          ref={crewRef}
+          className={arrived ? "crew crew-live crew-arrived" : "crew crew-live"}
+          transform={START_TRANSFORM}
+        >
           <circle className="crew-halo" r="26" />
           <g className="truck">
             <rect className="truck-shadow" x="-18.5" y="-9.5" width="38" height="19" rx="5.5" />
@@ -109,7 +120,8 @@ export default function LiveMap({ progress = 0, etaMin, statusLabel }) {
           <span className="eta-bar-fill eta-bar-live" style={{ width: `${barPct}%` }}></span>
         </div>
         <p className="eta-update">
-          <span className="dot-live" aria-hidden="true"></span> Actualizando en vivo
+          <span className="dot-live" aria-hidden="true"></span>{" "}
+          {arrived ? "Brigada trabajando en el sitio" : "Actualizando en vivo"}
         </p>
       </div>
     </div>

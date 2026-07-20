@@ -1186,11 +1186,71 @@ h2 { font-size: clamp(1.6rem, 4vw, 2.4rem); margin-bottom: 1rem; }
   background: #0a1220;
   box-shadow: 0 14px 40px rgba(0, 0, 0, 0.45);
 }
-/* Camioneta conducida por estado: la transición suaviza cada salto de tick */
-.crew-live { transition: transform 0.9s linear; }
+/* Camioneta conducida por estado. La posición se recalcula cada mapTickMs
+   (250ms); la transición cubre justo ese intervalo para que el recorrido se
+   vea continuo y no a saltos. */
+.crew-live { transition: transform 0.26s linear; }
+
+/* Llegada al sitio: la camioneta se ancla y el halo late para que el momento
+   de llegar sea visible aunque el participante no estuviera mirando el mapa. */
+.crew-arrived { transition: transform 0.4s ease-out; }
+.crew-arrived .crew-halo {
+  fill: rgba(44, 230, 168, 0.26);
+  animation: crew-land 1.8s ease-out infinite;
+  transform-origin: center;
+}
+@keyframes crew-land {
+  0%   { opacity: 0.9; transform: scale(0.75); }
+  100% { opacity: 0;   transform: scale(1.9); }
+}
+/* Ya no es una falla "sin atender": el pulso rojo cede al naranja de trabajo */
+.fault-working .fault-core  { fill: #ffb547; }
+.fault-working .fault-pulse { stroke: #ffb547; }
 /* El ancho de la barra de ETA viene inline desde React, sin animación CSS */
 .eta-bar-live { animation: none; transition: width 0.6s ease; }
 .eta-update { display: flex; align-items: center; gap: 0.4rem; }
+
+/* Tarjeta de la cuadrilla (quién atiende) — estilo "tu conductor" de Uber */
+.mvp-crew-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.8rem 0.95rem;
+  margin-top: 0.9rem;
+}
+.mvp-crew-avatar {
+  flex: none;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  color: #04121c;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow: 0 0 16px rgba(44, 230, 168, 0.3);
+}
+.mvp-crew-info { min-width: 0; flex: 1; }
+.mvp-crew-name { font-weight: 700; font-size: 0.98rem; line-height: 1.25; }
+.mvp-crew-role { color: var(--text-dim); font-size: 0.8rem; }
+.mvp-crew-plate {
+  flex: none;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.25rem 0.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.mvp-cause { margin-top: 0.8rem; }
 
 /* Pantalla de detalle */
 .mvp-back {
@@ -1234,8 +1294,8 @@ h2 { font-size: clamp(1.6rem, 4vw, 2.4rem); margin-bottom: 1rem; }
   margin: 0.9rem 0 1.1rem;
 }
 .mvp-brigade-icon { font-size: 1.4rem; }
-.mvp-brigade-name { font-weight: 700; font-size: 0.95rem; }
-.mvp-brigade-meta { color: var(--text-dim); font-size: 0.82rem; }
+.mvp-brigade-name { font-weight: 700; font-size: 0.98rem; }
+.mvp-brigade-meta { color: var(--text-dim); font-size: 0.8rem; line-height: 1.45; }
 .mvp-finish { margin-top: 1.4rem; }
 
 /* El cause-card de la landing se reutiliza dentro del shell */
