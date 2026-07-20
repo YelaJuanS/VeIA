@@ -11,6 +11,7 @@ const TYPES = new Set([
   "tap",
   "report_submitted",
   "location_changed",
+  "geo_result",
   "notify_opt_in",
   "share_intent",
   "value_moment_reached",

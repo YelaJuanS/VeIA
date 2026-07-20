@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import LiveMap from "../../components/LiveMap";
-import { BRAND, SCENARIO } from "../../lib/mvp-config";
+import { BRAND, LOCATION, SCENARIO } from "../../lib/mvp-config";
+import { requestRealLocation } from "../../lib/geo";
 import tracker from "../../lib/tracker";
 
 // MVP interactivo (S7): flujo entrada → reporte 1-tap → mapa en vivo →
@@ -38,6 +39,7 @@ export default function MvpPage() {
   const [locSource, setLocSource] = useState("detectada");
   const [changingLoc, setChangingLoc] = useState(false);
   const [customLoc, setCustomLoc] = useState("");
+  const [geoState, setGeoState] = useState("idle"); // idle | pidiendo | ok | fallo
   // Milisegundos transcurridos del trayecto simulado. Un solo reloj alimenta
   // la posición de la camioneta (continua) y el ETA en pantalla (en minutos).
   const [travelMs, setTravelMs] = useState(0);
@@ -61,6 +63,27 @@ export default function MvpPage() {
       window.removeEventListener("popstate", onPop);
     };
   }, []);
+
+  // Ubicación real: solo si está habilitada en config y solo al entrar a la
+  // pantalla de reporte, que es donde el permiso tiene sentido para el usuario.
+  // Si la deniega o falla, se conserva la simulada y el selector manual.
+  useEffect(() => {
+    if (!LOCATION.useRealLocation) return;
+    if (screen !== "reporte" || geoState !== "idle") return;
+    setGeoState("pidiendo");
+    requestRealLocation().then((r) => {
+      // Solo la etiqueta legible y la precisión llegan al tracker: nunca las
+      // coordenadas crudas del participante.
+      tracker.track("geo_result", { status: r.status, accuracy: r.accuracy || 0 });
+      if (r.status === "granted" && r.label) {
+        setLugar(r.label);
+        setLocSource("gps");
+        setGeoState("ok");
+      } else {
+        setGeoState("fallo");
+      }
+    });
+  }, [screen, geoState]);
 
   // La simulación del ETA arranca la primera vez que se llega al mapa y no
   // se reinicia al navegar mapa↔detalle (continuidad = confianza).
@@ -267,7 +290,17 @@ export default function MvpPage() {
                   <div className="mvp-geo-card" data-track-id="ubicacion-detectada">
                     <span className="mvp-geo-icon" aria-hidden="true">📍</span>
                     <div className="mvp-geo-body">
-                      {locSource === "detectada" ? (
+                      {geoState === "pidiendo" ? (
+                        <>
+                          <p className="mvp-geo-address">Detectando tu ubicación…</p>
+                          <p className="mvp-geo-sector">Acepta el permiso del navegador</p>
+                        </>
+                      ) : locSource === "gps" ? (
+                        <>
+                          <p className="mvp-geo-address">{lugar}</p>
+                          <p className="mvp-geo-sector">Ubicación de tu dispositivo</p>
+                        </>
+                      ) : locSource === "detectada" ? (
                         <>
                           <p className="mvp-geo-address">{SCENARIO.detectedAddress}</p>
                           <p className="mvp-geo-sector">{SCENARIO.sector}</p>
@@ -280,9 +313,10 @@ export default function MvpPage() {
                       )}
                     </div>
                     <div className="mvp-geo-side">
-                      {locSource === "detectada" && (
+                      {(locSource === "detectada" || locSource === "gps") && (
                         <span className="mvp-geo-badge">
-                          <span className="dot-live" aria-hidden="true"></span> detectada
+                          <span className="dot-live" aria-hidden="true"></span>
+                          {locSource === "gps" ? "GPS" : "detectada"}
                         </span>
                       )}
                       <button
