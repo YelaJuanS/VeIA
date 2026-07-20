@@ -101,6 +101,7 @@ function summarizeMvpSession(id, evs) {
     id,
     nombre: report?.data?.nombre || "",
     lugar: report?.data?.lugar || "",
+    alcance: report?.data?.alcance || "",
     usedGeo: report?.data?.usedGeo === true || report?.data?.usedGeo === "true",
     startTs: start?.ts || evs[0]?.ts || "",
     reachedValue: !!value,
@@ -161,17 +162,19 @@ function fmtSec(ms) {
 function buildMvpCsv(events) {
   const cols = [
     "sessionId", "type", "ts", "t_ms", "screen", "targetId",
-    "interactive", "duration_ms", "from", "to", "nombre", "lugar", "extra",
+    "interactive", "duration_ms", "from", "to", "nombre", "lugar", "alcance", "extra",
   ];
   const rows = [cols.join(",")];
   for (const e of dedupeMvpEvents(events)) {
     const d = e.data || {};
-    const { targetId, interactive, durationMs, from, to, nombre, lugar, ...rest } = d;
+    const {
+      targetId, interactive, durationMs, from, to, nombre, lugar, alcance, ...rest
+    } = d;
     rows.push(
       [
         e.sessionId, e.type, e.ts, e.t, e.screen,
         targetId ?? "", interactive ?? "", durationMs ?? "",
-        from ?? "", to ?? "", nombre ?? "", lugar ?? "",
+        from ?? "", to ?? "", nombre ?? "", lugar ?? "", alcance ?? "",
         Object.keys(rest).length ? JSON.stringify(rest) : "",
       ].map(csvEscape).join(",")
     );
@@ -429,6 +432,7 @@ export default function ResultadosPage() {
                       <th>Sesión</th>
                       <th>Participante</th>
                       <th>Lugar reportado</th>
+                      <th>Alcance</th>
                       <th>Inicio</th>
                       <th className="num">Time-to-value</th>
                       <th>¿Valor?</th>
@@ -449,6 +453,7 @@ export default function ResultadosPage() {
                           {s.lugar || "—"}
                           {s.usedGeo && <span className="res-tag">ubicación</span>}
                         </td>
+                        <td>{s.alcance || "—"}</td>
                         <td>{s.startTs ? new Date(s.startTs).toLocaleString() : "—"}</td>
                         <td className="num">{fmtSec(s.timeToValueMs)}</td>
                         <td>{s.reachedValue ? "Sí" : "No"}</td>

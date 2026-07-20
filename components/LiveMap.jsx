@@ -84,8 +84,13 @@ export default function LiveMap({ progress = 0, etaMin, statusLabel, arrived = f
           className={arrived ? "fault fault-working" : "fault"}
           transform={`translate(${SCENARIO.fault.x},${SCENARIO.fault.y})`}
         >
-          <circle className="fault-pulse" r="14" />
-          <circle className="fault-core" r="7" />
+          <circle className="fault-pulse" r="15" />
+          <circle className="fault-core" r="11" />
+          {/* Rayo: hace legible de un vistazo que ese punto es la falla */}
+          <path
+            className="fault-bolt"
+            d="M 2.6 -6.6 L -3.2 0.9 L -0.4 0.9 L -2.2 6.6 L 3.6 -0.9 L 0.8 -0.9 Z"
+          />
         </g>
         {/* Camioneta de brigada (vista superior, estilo Uber). Apunta a +x;
             el rotate del transform la orienta según la ruta. */}

@@ -302,6 +302,11 @@ h2 { font-size: clamp(1.6rem, 4vw, 2.4rem); margin-bottom: 1rem; }
   stroke: var(--danger);
   stroke-width: 3;
   animation: pulse 1.8s ease-out infinite;
+  /* transform-box: fill-box es obligatorio aquí. Sin él SVG usa view-box, con
+     lo que transform-origin: center apunta al centro del viewBox (320,200) y
+     no al del propio círculo: al escalar, el pulso se desplaza en diagonal
+     por el mapa en vez de expandirse sobre la falla. */
+  transform-box: fill-box;
   transform-origin: center;
 }
 @keyframes pulse {
@@ -1051,6 +1056,10 @@ h2 { font-size: clamp(1.6rem, 4vw, 2.4rem); margin-bottom: 1rem; }
   0%, 100% { transform: scale(1);   box-shadow: 0 0 0 0 rgba(245, 130, 31, 0.5); }
   50%      { transform: scale(1.3); box-shadow: 0 0 0 6px rgba(245, 130, 31, 0); }
 }
+/* El rayo blanco se lee sobre el rojo de falla y sobre el ámbar de trabajo */
+.fault-bolt { fill: #fff; }
+.reparapp-theme .fault-working .fault-bolt { fill: #3a2408; }
+
 /* El destello de la camioneta alterna naranja ↔ ámbar, no verde */
 .reparapp-theme .beacon { animation-name: beacon-warm; }
 @keyframes beacon-warm {
@@ -1232,6 +1241,13 @@ h2 { font-size: clamp(1.6rem, 4vw, 2.4rem); margin-bottom: 1rem; }
 }
 .mvp-field input:focus { border-color: var(--accent); }
 .mvp-field input::placeholder { color: #7a6857; }
+.mvp-field-hint {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  margin: -0.15rem 0 0.55rem;
+  line-height: 1.4;
+}
+.mvp-field .chip-group { margin-bottom: 0; }
 
 .mvp-geo-btn {
   margin-top: 0.5rem;
@@ -1308,6 +1324,7 @@ h2 { font-size: clamp(1.6rem, 4vw, 2.4rem); margin-bottom: 1rem; }
 .crew-arrived .crew-halo {
   fill: rgba(44, 230, 168, 0.26);
   animation: crew-land 1.8s ease-out infinite;
+  transform-box: fill-box;
   transform-origin: center;
 }
 @keyframes crew-land {

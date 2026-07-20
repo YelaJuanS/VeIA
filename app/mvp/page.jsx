@@ -24,6 +24,7 @@ export default function MvpPage() {
   // Datos que el propio participante registra en la pantalla de reporte.
   const [nombre, setNombre] = useState("");
   const [lugar, setLugar] = useState("");
+  const [alcance, setAlcance] = useState("");
   const [usedGeo, setUsedGeo] = useState(false);
   const [formError, setFormError] = useState("");
   // Milisegundos transcurridos del trayecto simulado. Un solo reloj alimenta
@@ -83,13 +84,13 @@ export default function MvpPage() {
   function confirmReport() {
     const n = nombre.trim();
     const l = lugar.trim();
-    if (!n || !l) {
+    if (!n || !l || !alcance) {
       setFormError(
-        !n && !l
-          ? "Completa tu nombre y el lugar de la falla."
-          : !n
+        !n
           ? "Falta tu nombre."
-          : "Falta el lugar de la falla."
+          : !l
+          ? "Falta el lugar de la falla."
+          : "Cuéntanos qué ves a tu alrededor."
       );
       return;
     }
@@ -97,6 +98,7 @@ export default function MvpPage() {
     tracker.track("report_submitted", {
       nombre: n.slice(0, 80),
       lugar: l.slice(0, 120),
+      alcance,
       usedGeo,
     });
     setConfirming(true);
@@ -111,6 +113,8 @@ export default function MvpPage() {
   }
 
   const firstName = nombre.trim().split(/\s+/)[0] || "";
+  const alcanceLabel =
+    SCENARIO.faultScopes.find((s) => s.value === alcance)?.label || "";
 
   function finish() {
     tracker.complete();
@@ -248,6 +252,28 @@ export default function MvpPage() {
                   </button>
                 </div>
 
+                <div className="mvp-field">
+                  <label id="lbl-alcance">{SCENARIO.scopeQuestion}</label>
+                  <p className="mvp-field-hint">{SCENARIO.scopeHint}</p>
+                  <div className="chip-group" role="group" aria-labelledby="lbl-alcance">
+                    {SCENARIO.faultScopes.map((s) => (
+                      <button
+                        key={s.value}
+                        className={alcance === s.value ? "chip selected" : "chip"}
+                        aria-pressed={alcance === s.value}
+                        data-track-id={`chip-alcance-${s.value}`}
+                        data-interactive="true"
+                        onClick={() => {
+                          setAlcance(s.value);
+                          setFormError("");
+                        }}
+                      >
+                        <span aria-hidden="true">{s.icon}</span> {s.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {formError && <p className="form-error">{formError}</p>}
 
                 <button
@@ -380,6 +406,9 @@ export default function MvpPage() {
                     {firstName ? ` · reportado por ${firstName}` : ""}
                   </p>
                   {lugar && <p className="step-meta">{lugar}</p>}
+                  {alcanceLabel && (
+                    <p className="step-meta">Reportaste: {alcanceLabel.toLowerCase()}</p>
+                  )}
                 </div>
               </li>
               <li className="step done">
