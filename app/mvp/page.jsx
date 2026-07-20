@@ -11,6 +11,8 @@ import tracker from "../../lib/tracker";
 // lib/mvp-config.js (no hay datos reales). La página no da instrucciones:
 // el participante debe llegar al momento de valor por sí solo.
 
+const DETECTED = `${SCENARIO.detectedAddress} · ${SCENARIO.sector}`;
+
 function statusFor(etaMin) {
   const s = SCENARIO.statuses.find((x) => etaMin >= x.minEta);
   return s ? s.label : SCENARIO.statuses[SCENARIO.statuses.length - 1].label;
@@ -29,9 +31,13 @@ export default function MvpPage() {
   // (pantalla de detalle) para no contaminar el camino que mide el test.
   const [notify, setNotify] = useState(false);
   const [shared, setShared] = useState(false);
-  // La ubicación no se pide: la app la "detecta" (simulada). Quitar ese campo
-  // libre elimina fricción justo en el paso previo al momento de valor.
-  const lugar = `${SCENARIO.detectedAddress} · ${SCENARIO.sector}`;
+  // La ubicación no se pide escrita: la app la "detecta" (simulada) y esa es
+  // la vía rápida. Pero es cambiable, porque la falla no siempre está donde
+  // uno está: la casa de un familiar, el negocio, un cable caído en la vía.
+  const [lugar, setLugar] = useState(DETECTED);
+  const [locSource, setLocSource] = useState("detectada");
+  const [changingLoc, setChangingLoc] = useState(false);
+  const [customLoc, setCustomLoc] = useState("");
   // Milisegundos transcurridos del trayecto simulado. Un solo reloj alimenta
   // la posición de la camioneta (continua) y el ETA en pantalla (en minutos).
   const [travelMs, setTravelMs] = useState(0);
@@ -98,6 +104,7 @@ export default function MvpPage() {
     tracker.track("report_submitted", {
       nombre: n.slice(0, 80),
       lugar: lugar.slice(0, 120),
+      origenUbicacion: locSource,
       alcance,
     });
     setConfirming(true);
@@ -107,6 +114,26 @@ export default function MvpPage() {
   const firstName = nombre.trim().split(/\s+/)[0] || "";
   const alcanceLabel =
     SCENARIO.faultScopes.find((s) => s.value === alcance)?.label || "";
+
+  // Elegir otra zona. Se registra como evento propio: saber cuántos
+  // participantes necesitaron reportar fuera de su ubicación es justamente el
+  // dato que motivó esta pantalla.
+  function pickLocation(value, source) {
+    setLugar(value);
+    setLocSource(source);
+    setChangingLoc(false);
+    setFormError("");
+    tracker.track("location_changed", { lugar: value.slice(0, 120), origen: source });
+  }
+
+  function confirmCustomLocation() {
+    const c = customLoc.trim();
+    if (!c) {
+      setFormError("Escribe la dirección o el barrio de la falla.");
+      return;
+    }
+    pickLocation(c, "manual");
+  }
 
   // AARRR/Retención: intención de volver. Simulado — no se envía ningún aviso.
   function toggleNotify() {
@@ -234,17 +261,91 @@ export default function MvpPage() {
                   />
                 </div>
 
-                {/* La dirección no se escribe: la app la detecta (simulada) */}
-                <div className="mvp-geo-card" data-track-id="ubicacion-detectada">
-                  <span className="mvp-geo-icon" aria-hidden="true">📍</span>
-                  <div className="mvp-geo-body">
-                    <p className="mvp-geo-address">{SCENARIO.detectedAddress}</p>
-                    <p className="mvp-geo-sector">{SCENARIO.sector}</p>
+                {/* La dirección no se escribe: la app la detecta (simulada),
+                    pero se puede cambiar si la falla es en otra zona. */}
+                {!changingLoc ? (
+                  <div className="mvp-geo-card" data-track-id="ubicacion-detectada">
+                    <span className="mvp-geo-icon" aria-hidden="true">📍</span>
+                    <div className="mvp-geo-body">
+                      {locSource === "detectada" ? (
+                        <>
+                          <p className="mvp-geo-address">{SCENARIO.detectedAddress}</p>
+                          <p className="mvp-geo-sector">{SCENARIO.sector}</p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="mvp-geo-address">{lugar}</p>
+                          <p className="mvp-geo-sector">Zona indicada por ti</p>
+                        </>
+                      )}
+                    </div>
+                    <div className="mvp-geo-side">
+                      {locSource === "detectada" && (
+                        <span className="mvp-geo-badge">
+                          <span className="dot-live" aria-hidden="true"></span> detectada
+                        </span>
+                      )}
+                      <button
+                        className="mvp-geo-change"
+                        data-track-id="btn-cambiar-zona"
+                        data-interactive="true"
+                        onClick={() => setChangingLoc(true)}
+                      >
+                        Cambiar
+                      </button>
+                    </div>
                   </div>
-                  <span className="mvp-geo-badge">
-                    <span className="dot-live" aria-hidden="true"></span> detectada
-                  </span>
-                </div>
+                ) : (
+                  <div className="mvp-loc-picker" data-track-id="selector-zona">
+                    <p className="mvp-field-label">¿Dónde está la falla?</p>
+                    <div className="option-list">
+                      <button
+                        className="option"
+                        data-track-id="opt-zona-detectada"
+                        data-interactive="true"
+                        onClick={() => pickLocation(DETECTED, "detectada")}
+                      >
+                        📍 Mi ubicación actual · {SCENARIO.sector}
+                      </button>
+                      {SCENARIO.otherSectors.map((s) => (
+                        <button
+                          key={s}
+                          className="option"
+                          data-track-id="opt-zona-lista"
+                          data-interactive="true"
+                          onClick={() => pickLocation(s, "lista")}
+                        >
+                          🗺️ {s}
+                        </button>
+                      ))}
+                    </div>
+
+                    <label className="mvp-loc-other" htmlFor="rep-otra">
+                      O escribe otra dirección
+                    </label>
+                    <div className="mvp-loc-row">
+                      <input
+                        id="rep-otra"
+                        type="text"
+                        autoComplete="off"
+                        placeholder="Dirección o barrio"
+                        value={customLoc}
+                        data-track-id="campo-otra-zona"
+                        data-interactive="true"
+                        onChange={(e) => setCustomLoc(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && confirmCustomLocation()}
+                      />
+                      <button
+                        className="btn btn-primary mvp-loc-ok"
+                        data-track-id="btn-confirmar-zona"
+                        data-interactive="true"
+                        onClick={confirmCustomLocation}
+                      >
+                        Usar
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 <div className="mvp-field">
                   <label id="lbl-alcance">{SCENARIO.scopeQuestion}</label>

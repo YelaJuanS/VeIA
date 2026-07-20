@@ -1264,8 +1264,14 @@ h2 { font-size: clamp(1.6rem, 4vw, 2.4rem); margin-bottom: 1rem; }
 .mvp-geo-body { min-width: 0; flex: 1; }
 .mvp-geo-address { font-weight: 700; font-size: 0.95rem; line-height: 1.3; }
 .mvp-geo-sector { color: var(--text-dim); font-size: 0.8rem; }
-.mvp-geo-badge {
+.mvp-geo-side {
   flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.2rem;
+}
+.mvp-geo-badge {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
@@ -1275,6 +1281,56 @@ h2 { font-size: clamp(1.6rem, 4vw, 2.4rem); margin-bottom: 1rem; }
   letter-spacing: 0.06em;
   color: var(--accent);
 }
+.mvp-geo-change {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0.1rem 0;
+  text-decoration: underline;
+}
+.mvp-geo-change:hover { color: var(--accent); }
+
+/* Selector de zona: la falla puede no estar donde está el usuario */
+.mvp-loc-picker {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+.mvp-field-label {
+  font-size: 0.88rem;
+  font-weight: 700;
+  margin-bottom: 0.6rem;
+}
+.mvp-loc-picker .option { font-size: 0.88rem; padding: 0.7rem 0.85rem; }
+.mvp-loc-other {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  margin: 0.9rem 0 0.4rem;
+}
+.mvp-loc-row { display: flex; gap: 0.5rem; }
+.mvp-loc-row input {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.95rem;
+  padding: 0.7rem 0.8rem;
+  outline: none;
+}
+.mvp-loc-row input:focus { border-color: var(--accent); }
+.mvp-loc-row input::placeholder { color: #7a6857; }
+.mvp-loc-ok { flex: none; padding: 0.7rem 1.1rem; font-size: 0.9rem; }
 
 .mvp-reported-place {
   color: var(--text-dim);

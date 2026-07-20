@@ -109,6 +109,8 @@ function summarizeMvpSession(id, evs) {
     nombre: report?.data?.nombre || "",
     lugar: report?.data?.lugar || "",
     alcance: report?.data?.alcance || "",
+    origenUbicacion: report?.data?.origenUbicacion || "",
+    cambioZona: evs.some((e) => e.type === "location_changed"),
     canal: start?.data?.canal || "directo",
     notifyOn,
     shared: evs.some((e) => e.type === "share_intent"),
@@ -171,19 +173,22 @@ function fmtSec(ms) {
 function buildMvpCsv(events) {
   const cols = [
     "sessionId", "type", "ts", "t_ms", "screen", "targetId",
-    "interactive", "duration_ms", "from", "to", "nombre", "lugar", "alcance", "extra",
+    "interactive", "duration_ms", "from", "to", "nombre", "lugar",
+    "origen_ubicacion", "alcance", "extra",
   ];
   const rows = [cols.join(",")];
   for (const e of dedupeMvpEvents(events)) {
     const d = e.data || {};
     const {
-      targetId, interactive, durationMs, from, to, nombre, lugar, alcance, ...rest
+      targetId, interactive, durationMs, from, to, nombre, lugar,
+      origenUbicacion, origen, alcance, ...rest
     } = d;
     rows.push(
       [
         e.sessionId, e.type, e.ts, e.t, e.screen,
         targetId ?? "", interactive ?? "", durationMs ?? "",
-        from ?? "", to ?? "", nombre ?? "", lugar ?? "", alcance ?? "",
+        from ?? "", to ?? "", nombre ?? "", lugar ?? "",
+        origenUbicacion ?? origen ?? "", alcance ?? "",
         Object.keys(rest).length ? JSON.stringify(rest) : "",
       ].map(csvEscape).join(",")
     );
@@ -515,7 +520,7 @@ export default function ResultadosPage() {
                     <tr>
                       <th>Sesión</th>
                       <th>Participante</th>
-                      <th>Ubicación detectada</th>
+                      <th>Ubicación del reporte</th>
                       <th>Alcance</th>
                       <th>Inicio</th>
                       <th className="num">Time-to-value</th>
@@ -536,7 +541,12 @@ export default function ResultadosPage() {
                       <tr key={s.id}>
                         <td>{s.id.slice(0, 8)}</td>
                         <td>{s.nombre || "—"}</td>
-                        <td>{s.lugar || "—"}</td>
+                        <td>
+                          {s.lugar || "—"}
+                          {s.origenUbicacion && s.origenUbicacion !== "detectada" && (
+                            <span className="res-tag">otra zona</span>
+                          )}
+                        </td>
                         <td>{s.alcance || "—"}</td>
                         <td>{s.startTs ? new Date(s.startTs).toLocaleString() : "—"}</td>
                         <td className="num">{fmtSec(s.timeToValueMs)}</td>

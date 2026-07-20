@@ -84,7 +84,8 @@ carga de `/mvp` y envía eventos en lote a `POST /api/track`, persistidos en
 | `hesitation` | Al superar `hesitationSeconds` en una pantalla sin avanzar | Fricción / duda |
 | `backtrack` | Al retroceder (botón "‹ Mapa" o atrás del navegador) | Flujo no intuitivo |
 | `dead_tap` | Al tocar repetidamente algo no interactivo | Expectativa de interactividad no cumplida |
-| `report_submitted` | Al enviar el reporte | Nombre, ubicación detectada y alcance del corte |
+| `report_submitted` | Al enviar el reporte | Nombre, ubicación, origen de esa ubicación y alcance del corte |
+| `location_changed` | Al reportar una falla fuera de la ubicación detectada | Cuántos necesitan reportar otra zona (casa de un familiar, el negocio, un cable en la vía) |
 | `notify_opt_in` | Al activar/desactivar los avisos | AARRR/Retención: intención de volver |
 | `share_intent` | Al pulsar "Avisar a un vecino" | AARRR/Referencia: intención de compartir |
 | `task_complete` / `task_abandon` | Botón "Finalizar seguimiento" / cierre de pestaña antes de terminar | Si llegó al valor o se rindió |
