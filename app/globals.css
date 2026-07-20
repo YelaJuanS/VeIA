@@ -1438,6 +1438,39 @@ h2 { font-size: clamp(1.6rem, 4vw, 2.4rem); margin-bottom: 1rem; }
 .mvp-brigade-icon { font-size: 1.4rem; }
 .mvp-brigade-name { font-weight: 700; font-size: 0.98rem; }
 .mvp-brigade-meta { color: var(--text-dim); font-size: 0.8rem; line-height: 1.45; }
+/* Acciones post-valor: avisos (retención) y compartir (referencia) */
+.mvp-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 1.2rem;
+}
+.mvp-action {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.8rem 0.95rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.mvp-action:hover { border-color: var(--accent); }
+.mvp-action-on {
+  border-color: var(--accent);
+  background: rgba(245, 130, 31, 0.1);
+  color: var(--accent);
+}
+.mvp-action-icon { flex: none; font-size: 1.05rem; }
+.mvp-action-text { min-width: 0; }
+
 .mvp-finish { margin-top: 1.4rem; }
 
 /* El cause-card de la landing se reutiliza dentro del shell */
@@ -1483,6 +1516,16 @@ h2 { font-size: clamp(1.6rem, 4vw, 2.4rem); margin-bottom: 1rem; }
   font-variant-numeric: tabular-nums;
   text-align: right;
 }
+
+.res-note {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  line-height: 1.55;
+  margin-bottom: 0.9rem;
+  border-left: 2px solid var(--border);
+  padding-left: 0.8rem;
+}
+.res-note strong { color: var(--text); }
 
 .res-tag {
   display: inline-block;

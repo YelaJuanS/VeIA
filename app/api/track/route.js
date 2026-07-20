@@ -10,6 +10,8 @@ const TYPES = new Set([
   "screen_view",
   "tap",
   "report_submitted",
+  "notify_opt_in",
+  "share_intent",
   "value_moment_reached",
   "hesitation",
   "backtrack",

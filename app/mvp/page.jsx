@@ -25,6 +25,10 @@ export default function MvpPage() {
   const [nombre, setNombre] = useState("");
   const [alcance, setAlcance] = useState("");
   const [formError, setFormError] = useState("");
+  // AARRR: retención y referencia. Ambas viven DESPUÉS del momento de valor
+  // (pantalla de detalle) para no contaminar el camino que mide el test.
+  const [notify, setNotify] = useState(false);
+  const [shared, setShared] = useState(false);
   // La ubicación no se pide: la app la "detecta" (simulada). Quitar ese campo
   // libre elimina fricción justo en el paso previo al momento de valor.
   const lugar = `${SCENARIO.detectedAddress} · ${SCENARIO.sector}`;
@@ -103,6 +107,21 @@ export default function MvpPage() {
   const firstName = nombre.trim().split(/\s+/)[0] || "";
   const alcanceLabel =
     SCENARIO.faultScopes.find((s) => s.value === alcance)?.label || "";
+
+  // AARRR/Retención: intención de volver. Simulado — no se envía ningún aviso.
+  function toggleNotify() {
+    const next = !notify;
+    setNotify(next);
+    tracker.track("notify_opt_in", { active: next, etaMin });
+  }
+
+  // AARRR/Referencia: intención de compartir. Simulado — no se envía nada a
+  // nadie; solo se registra que el participante quiso hacerlo.
+  function shareWithNeighbor() {
+    if (shared) return;
+    setShared(true);
+    tracker.track("share_intent", { etaMin, screen: "detalle" });
+  }
 
   function finish() {
     tracker.complete();
@@ -437,6 +456,39 @@ export default function MvpPage() {
                 </div>
               </li>
             </ol>
+
+            {/* Acciones post-valor (AARRR: retención y referencia). Ambas son
+                simuladas: no se envía ningún aviso ni se comparte nada. */}
+            <div className="mvp-actions">
+              <button
+                className={notify ? "mvp-action mvp-action-on" : "mvp-action"}
+                aria-pressed={notify}
+                data-track-id="btn-avisos"
+                data-interactive="true"
+                onClick={toggleNotify}
+              >
+                <span className="mvp-action-icon" aria-hidden="true">
+                  {notify ? "✓" : "🔔"}
+                </span>
+                <span className="mvp-action-text">
+                  {notify ? "Te avisaremos cuando vuelva" : "Avísame cuando vuelva la luz"}
+                </span>
+              </button>
+
+              <button
+                className={shared ? "mvp-action mvp-action-on" : "mvp-action"}
+                data-track-id="btn-compartir"
+                data-interactive="true"
+                onClick={shareWithNeighbor}
+              >
+                <span className="mvp-action-icon" aria-hidden="true">
+                  {shared ? "✓" : "📣"}
+                </span>
+                <span className="mvp-action-text">
+                  {shared ? "Estado compartido con tus vecinos" : "Avisar a un vecino"}
+                </span>
+              </button>
+            </div>
 
             <button
               className="btn btn-ghost btn-block mvp-finish"

@@ -96,12 +96,22 @@ function summarizeMvpSession(id, evs) {
     if (ms > topMs) { topScreen = s; topMs = ms; }
   }
 
+  // AARRR: canal de origen (adquisición) e intenciones post-valor.
+  const notifyEvents = evs.filter((e) => e.type === "notify_opt_in");
+  const lastNotify = notifyEvents[notifyEvents.length - 1];
+  const notifyOn =
+    !!lastNotify &&
+    (lastNotify.data?.active === true || lastNotify.data?.active === "true");
+
   const lastT = evs.reduce((m, e) => Math.max(m, Number(e.t) || 0), 0);
   return {
     id,
     nombre: report?.data?.nombre || "",
     lugar: report?.data?.lugar || "",
     alcance: report?.data?.alcance || "",
+    canal: start?.data?.canal || "directo",
+    notifyOn,
+    shared: evs.some((e) => e.type === "share_intent"),
     startTs: start?.ts || evs[0]?.ts || "",
     reachedValue: !!value,
     timeToValueMs: value ? Number(value.data?.timeToValueMs) || null : null,
@@ -232,6 +242,12 @@ export default function ResultadosPage() {
   const mvpReached = mvpSessions.filter((s) => s.reachedValue);
   const mvpCompleted = mvpSessions.filter((s) => s.outcome === "completada");
   const mvpTtvMedian = median(mvpReached.map((s) => s.timeToValueMs));
+  const mvpNotify = mvpSessions.filter((s) => s.notifyOn);
+  const mvpShared = mvpSessions.filter((s) => s.shared);
+  const mvpByCanal = mvpSessions.reduce((acc, s) => {
+    acc[s.canal] = (acc[s.canal] || 0) + 1;
+    return acc;
+  }, {});
   const mvpFriction = mvpFrictionByScreen(mvpSessions);
   const mvpFrictionTop = Object.entries(mvpFriction).sort((a, b) => b[1] - a[1])[0];
   const funnel = [
@@ -405,6 +421,75 @@ export default function ResultadosPage() {
                 </div>
               </div>
 
+              <h3 className="res-subhead">Embudo AARRR</h3>
+              <p className="res-note">
+                Solo <strong>Adquisición</strong> y <strong>Activación</strong> se
+                miden como comportamiento real. Retención y Referencia capturan{" "}
+                <strong>intención declarada</strong> en una sola sesión observada,
+                que es una señal mucho más débil: sirve para comparar entre
+                participantes, no como tasa proyectable.
+              </p>
+              <div className="res-table-wrap">
+                <table className="res-table">
+                  <thead>
+                    <tr>
+                      <th>Etapa</th>
+                      <th>Qué mide aquí</th>
+                      <th className="num">Resultado</th>
+                      <th>Tipo de señal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Adquisición</td>
+                      <td>Canal de origen de la sesión</td>
+                      <td className="num">
+                        {Object.entries(mvpByCanal)
+                          .map(([c, n]) => `${c}: ${n}`)
+                          .join(" · ") || "—"}
+                      </td>
+                      <td>comportamiento</td>
+                    </tr>
+                    <tr>
+                      <td>Activación</td>
+                      <td>Alcanzó el momento de valor</td>
+                      <td className="num">
+                        {mvpReached.length}/{mvpSessions.length}
+                        {" · "}
+                        {pct(mvpReached.length, mvpSessions.length)}
+                      </td>
+                      <td>comportamiento</td>
+                    </tr>
+                    <tr>
+                      <td>Retención</td>
+                      <td>Activó avisos de restablecimiento</td>
+                      <td className="num">
+                        {mvpNotify.length}/{mvpSessions.length}
+                        {" · "}
+                        {pct(mvpNotify.length, mvpSessions.length)}
+                      </td>
+                      <td>intención</td>
+                    </tr>
+                    <tr>
+                      <td>Ingreso</td>
+                      <td>Modelo B2B2C: lo paga el operador de red</td>
+                      <td className="num">—</td>
+                      <td>no medible en este test</td>
+                    </tr>
+                    <tr>
+                      <td>Referencia</td>
+                      <td>Compartió el estado con un vecino</td>
+                      <td className="num">
+                        {mvpShared.length}/{mvpSessions.length}
+                        {" · "}
+                        {pct(mvpShared.length, mvpSessions.length)}
+                      </td>
+                      <td>intención</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
               <h3 className="res-subhead">Embudo del flujo</h3>
               <div className="mvp-funnel">
                 {funnel.map((f) => (
@@ -441,6 +526,9 @@ export default function ResultadosPage() {
                       <th className="num">Hesitaciones</th>
                       <th>Mayor permanencia</th>
                       <th className="num">Duración</th>
+                      <th>Canal</th>
+                      <th>Avisos</th>
+                      <th>Compartió</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -463,6 +551,9 @@ export default function ResultadosPage() {
                             : "—"}
                         </td>
                         <td className="num">{fmtSec(s.totalMs)}</td>
+                        <td>{s.canal}</td>
+                        <td>{s.notifyOn ? "Sí" : "No"}</td>
+                        <td>{s.shared ? "Sí" : "No"}</td>
                       </tr>
                     ))}
                   </tbody>

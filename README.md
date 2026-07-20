@@ -84,6 +84,9 @@ carga de `/mvp` y envía eventos en lote a `POST /api/track`, persistidos en
 | `hesitation` | Al superar `hesitationSeconds` en una pantalla sin avanzar | Fricción / duda |
 | `backtrack` | Al retroceder (botón "‹ Mapa" o atrás del navegador) | Flujo no intuitivo |
 | `dead_tap` | Al tocar repetidamente algo no interactivo | Expectativa de interactividad no cumplida |
+| `report_submitted` | Al enviar el reporte | Nombre, ubicación detectada y alcance del corte |
+| `notify_opt_in` | Al activar/desactivar los avisos | AARRR/Retención: intención de volver |
+| `share_intent` | Al pulsar "Avisar a un vecino" | AARRR/Referencia: intención de compartir |
 | `task_complete` / `task_abandon` | Botón "Finalizar seguimiento" / cierre de pestaña antes de terminar | Si llegó al valor o se rindió |
 | `feedback` | Envío del formulario en `/feedback` | Las 3 respuestas cualitativas, ligadas al `sessionId` |
 
@@ -92,12 +95,42 @@ Todos los umbrales (segundos para `value_moment_reached`, segundos de
 `TRACKING` dentro de `lib/mvp-config.js` — cambiarlos no requiere tocar la lógica
 del tracker ni de las pantallas.
 
+### Embudo AARRR — qué mide y qué no
+
+El prototipo instrumenta las cinco etapas del embudo pirata, pero **un test
+moderado con 5–6 personas en una sola sesión no puede medir las cinco con el
+mismo rigor**. Presentarlas como si fueran equivalentes sería exactamente la
+métrica vanidosa que Lean Startup advierte evitar, así que el panel las separa
+por tipo de señal:
+
+| Etapa | Qué mide en este prototipo | Tipo de señal |
+|---|---|---|
+| **Adquisición** | Canal de origen de la sesión (`?canal=` / `?utm_source=`, misma convención que la landing) | Comportamiento real |
+| **Activación** | Alcanzó el momento de valor: llegó al mapa vivo y permaneció más del umbral | Comportamiento real |
+| **Retención** | Activó "Avísame cuando vuelva la luz" | Intención declarada |
+| **Ingreso** | No medible aquí: el modelo es B2B2C, lo paga el operador de red, no el usuario final | No medible |
+| **Referencia** | Pulsó "Avisar a un vecino" | Intención declarada |
+
+Solo las dos primeras son comportamiento observado. Retención y Referencia
+registran que el participante *quiso* hacerlo estando observado, lo que sirve
+para comparar entre participantes pero **no es una tasa proyectable**: medir
+retención real exige uso repetido en el tiempo con usuarios no observados.
+
+Las acciones de retención y referencia viven en la pantalla de **detalle**, es
+decir **después** del momento de valor, deliberadamente: colocarlas antes
+habría contaminado el time-to-value y el conteo de taps muertos del
+experimento principal, que es la hipótesis de valor.
+
+Ambas acciones son **simuladas**: no se envía ningún aviso ni se comparte nada
+con nadie; solo se registra la intención.
+
 ### Protocolo del facilitador
 
 1. Enviar `https://TU-DOMINIO.vercel.app/mvp` al participante (no está enlazado
    desde la landing) y dejarlo navegar sin guiarlo. La consigna verbal es una
    sola frase: *"Se acaba de ir la luz en tu casa. Averigua qué está pasando y
-   cuándo volverá."*
+   cuándo volverá."* Para atribuir la adquisición, añade el canal al enlace:
+   `/mvp?canal=whatsapp-vecinos`.
 2. Al terminar (botón "Finalizar seguimiento"), el participante llega solo a
    `/feedback` y responde 3 preguntas abiertas.
 3. Para el siguiente participante: botón **"Siguiente participante"** en
