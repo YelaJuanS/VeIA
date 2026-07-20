@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import LiveMap from "../../components/LiveMap";
-import { SCENARIO } from "../../lib/mvp-config";
+import { BRAND, SCENARIO } from "../../lib/mvp-config";
 import tracker from "../../lib/tracker";
 
 // MVP interactivo (S7): flujo entrada → reporte 1-tap → mapa en vivo →
@@ -21,6 +21,11 @@ export default function MvpPage() {
   const rootRef = useRef(null);
   const [screen, setScreen] = useState("inicio");
   const [confirming, setConfirming] = useState(false);
+  // Datos que el propio participante registra en la pantalla de reporte.
+  const [nombre, setNombre] = useState("");
+  const [lugar, setLugar] = useState("");
+  const [usedGeo, setUsedGeo] = useState(false);
+  const [formError, setFormError] = useState("");
   // Milisegundos transcurridos del trayecto simulado. Un solo reloj alimenta
   // la posición de la camioneta (continua) y el ETA en pantalla (en minutos).
   const [travelMs, setTravelMs] = useState(0);
@@ -72,10 +77,40 @@ export default function MvpPage() {
     history.pushState({ screen: name }, "");
   }
 
+  // El participante registra su nombre y dónde está la falla. Ambos quedan en
+  // el evento report_submitted, así el panel puede cruzar el comportamiento
+  // con lo que la persona efectivamente escribió.
   function confirmReport() {
+    const n = nombre.trim();
+    const l = lugar.trim();
+    if (!n || !l) {
+      setFormError(
+        !n && !l
+          ? "Completa tu nombre y el lugar de la falla."
+          : !n
+          ? "Falta tu nombre."
+          : "Falta el lugar de la falla."
+      );
+      return;
+    }
+    setFormError("");
+    tracker.track("report_submitted", {
+      nombre: n.slice(0, 80),
+      lugar: l.slice(0, 120),
+      usedGeo,
+    });
     setConfirming(true);
     setTimeout(() => goTo("mapa"), 1200);
   }
+
+  // Autocompleta el lugar con la ubicación "detectada" (simulada).
+  function useMyLocation() {
+    setLugar(SCENARIO.sector);
+    setUsedGeo(true);
+    setFormError("");
+  }
+
+  const firstName = nombre.trim().split(/\s+/)[0] || "";
 
   function finish() {
     tracker.complete();
@@ -97,11 +132,12 @@ export default function MvpPage() {
       : `${etaMin} min`;
 
   return (
-    <main className="mvp-page" ref={rootRef}>
+    <main className="mvp-page reparapp-theme" ref={rootRef}>
       <div className="mvp-shell">
         <header className="mvp-topbar">
           <span className="mvp-logo">
-            Ve<span className="ia-inline">IA</span>
+            {BRAND.namePrefix}
+            <span className="brand-accent">{BRAND.nameSuffix}</span>
           </span>
           <span
             className="mvp-bell"
@@ -115,7 +151,7 @@ export default function MvpPage() {
         {screen === "inicio" && (
           <section className="mvp-screen">
             <p className="mvp-greeting">Hola 👋</p>
-            <h1 className="mvp-title">Tu energía, en tiempo real</h1>
+            <h1 className="mvp-title">{BRAND.tagline}</h1>
 
             <div className="mvp-alert" data-track-id="tarjeta-alerta">
               <p className="mvp-alert-head">
@@ -162,12 +198,8 @@ export default function MvpPage() {
           <section className="mvp-screen">
             {!confirming ? (
               <>
-                <h1 className="mvp-title">Reconocimos tu ubicación</h1>
+                <h1 className="mvp-title">Reporta tu falla</h1>
                 <div className="mvp-report-card" data-track-id="tarjeta-reporte">
-                  <p className="mvp-report-row">
-                    <span className="mvp-report-icon" aria-hidden="true">📍</span>
-                    {SCENARIO.sector}
-                  </p>
                   <p className="mvp-report-row">
                     <span className="mvp-report-icon" aria-hidden="true">⚡</span>
                     Falla detectada en la red de tu zona
@@ -176,23 +208,63 @@ export default function MvpPage() {
                     {SCENARIO.neighborsReporting} vecinos ya reportaron este corte
                   </p>
                 </div>
+
+                <div className="mvp-field">
+                  <label htmlFor="rep-nombre">¿Cómo te llamas?</label>
+                  <input
+                    id="rep-nombre"
+                    type="text"
+                    autoComplete="off"
+                    placeholder="Tu nombre"
+                    value={nombre}
+                    data-track-id="campo-nombre"
+                    data-interactive="true"
+                    onChange={(e) => setNombre(e.target.value)}
+                  />
+                </div>
+
+                <div className="mvp-field">
+                  <label htmlFor="rep-lugar">¿Dónde está la falla?</label>
+                  <input
+                    id="rep-lugar"
+                    type="text"
+                    autoComplete="off"
+                    placeholder="Dirección o barrio"
+                    value={lugar}
+                    data-track-id="campo-lugar"
+                    data-interactive="true"
+                    onChange={(e) => {
+                      setLugar(e.target.value);
+                      setUsedGeo(false);
+                    }}
+                  />
+                  <button
+                    className="mvp-geo-btn"
+                    data-track-id="btn-usar-ubicacion"
+                    data-interactive="true"
+                    onClick={useMyLocation}
+                  >
+                    <span aria-hidden="true">📍</span> Usar mi ubicación actual
+                  </button>
+                </div>
+
+                {formError && <p className="form-error">{formError}</p>}
+
                 <button
                   className="btn btn-primary btn-block"
                   data-track-id="btn-confirmar"
                   data-interactive="true"
                   onClick={confirmReport}
                 >
-                  Confirmar: no tengo luz
+                  Enviar reporte
                 </button>
-                <p className="mvp-fineprint" data-track-id="texto-direccion">
-                  Cra 54 #68-120 · {SCENARIO.sector}
-                </p>
               </>
             ) : (
               <div className="mvp-confirming" aria-live="polite">
                 <div className="mvp-confirm-check" aria-hidden="true">✓</div>
                 <h1 className="mvp-title">
-                  Reporte #{SCENARIO.reportId} confirmado
+                  {firstName ? `Gracias, ${firstName}. ` : ""}Reporte #
+                  {SCENARIO.reportId} confirmado
                 </h1>
                 <p className="mvp-sub">Conectando con la brigada…</p>
               </div>
@@ -208,6 +280,11 @@ export default function MvpPage() {
                 <span aria-hidden="true">⚡</span> {SCENARIO.faultShort} ·{" "}
                 {arrived ? "brigada en el sitio" : `a ${minsToSite} min del sitio`}
               </p>
+              {lugar && (
+                <p className="mvp-reported-place">
+                  <span aria-hidden="true">📍</span> {lugar}
+                </p>
+              )}
             </div>
             <LiveMap
               progress={progress}
@@ -298,7 +375,11 @@ export default function MvpPage() {
                 <span className="step-marker" aria-hidden="true">✓</span>
                 <div className="step-body">
                   <p className="step-title">Reporte recibido y confirmado</p>
-                  <p className="step-meta">Radicado #{SCENARIO.reportId}</p>
+                  <p className="step-meta">
+                    Radicado #{SCENARIO.reportId}
+                    {firstName ? ` · reportado por ${firstName}` : ""}
+                  </p>
+                  {lugar && <p className="step-meta">{lugar}</p>}
                 </div>
               </li>
               <li className="step done">

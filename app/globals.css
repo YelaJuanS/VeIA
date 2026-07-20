@@ -1007,6 +1007,60 @@ h2 { font-size: clamp(1.6rem, 4vw, 2.4rem); margin-bottom: 1rem; }
 .res-empty { color: var(--text-dim); font-size: 0.92rem; }
 .res-error { color: var(--danger); font-size: 0.9rem; margin-bottom: 1rem; }
 
+/* ═══════════════════ ReparApp — tema naranja (Celsia) ═══════════════════
+   Alcance limitado al prototipo (/mvp y /feedback): la landing de S6 conserva
+   su identidad verde/cian de VeIA. Casi todo hereda de --accent/--accent-2,
+   pero los verdes que el CSS base tiene escritos a mano (glows, halos, pulsos)
+   no heredan y se sobrescriben aquí uno por uno. */
+
+.reparapp-theme {
+  --accent: #f5821f;      /* naranja Celsia */
+  --accent-2: #ffab3d;    /* ámbar */
+  --danger: #e4322b;      /* rojo de falla */
+  --bg: #0f0b07;          /* noche cálida */
+  --bg-raised: #171009;
+  --bg-card: #1d140c;
+  --border: #33241a;
+  --text: #f6efe8;
+  --text-dim: #b7a696;
+}
+
+.brand-accent {
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-weight: 800;
+}
+
+/* Glows y acentos que en el CSS base son verdes fijos */
+.reparapp-theme .btn-primary { box-shadow: 0 0 24px rgba(245, 130, 31, 0.35); }
+.reparapp-theme .btn-primary:hover { box-shadow: 0 0 36px rgba(245, 130, 31, 0.55); }
+.reparapp-theme .crew-halo { fill: rgba(245, 130, 31, 0.16); }
+.reparapp-theme .crew-arrived .crew-halo { fill: rgba(245, 130, 31, 0.28); }
+.reparapp-theme .eta-card { border-color: rgba(245, 130, 31, 0.45); }
+.reparapp-theme .mvp-eta-row { border-color: rgba(245, 130, 31, 0.4); }
+.reparapp-theme .mvp-crew-avatar { box-shadow: 0 0 16px rgba(245, 130, 31, 0.32); }
+.reparapp-theme .mvp-confirm-check { box-shadow: 0 0 28px rgba(245, 130, 31, 0.5); }
+.reparapp-theme .step.done .step-marker { box-shadow: 0 0 10px rgba(245, 130, 31, 0.4); }
+.reparapp-theme .step.done:not(:last-child)::before {
+  background: linear-gradient(180deg, var(--accent), rgba(245, 130, 31, 0.35));
+}
+.reparapp-theme .step-pulse { animation-name: step-pulse-warm; }
+@keyframes step-pulse-warm {
+  0%, 100% { transform: scale(1);   box-shadow: 0 0 0 0 rgba(245, 130, 31, 0.5); }
+  50%      { transform: scale(1.3); box-shadow: 0 0 0 6px rgba(245, 130, 31, 0); }
+}
+/* El destello de la camioneta alterna naranja ↔ ámbar, no verde */
+.reparapp-theme .beacon { animation-name: beacon-warm; }
+@keyframes beacon-warm {
+  0%, 100% { fill: #ffab3d; opacity: 1; }
+  50%      { fill: #ffe9a8; opacity: 0.85; }
+}
+/* La falla en trabajo se distingue del naranja de marca con un ámbar claro */
+.reparapp-theme .fault-working .fault-core  { fill: #ffd08a; }
+.reparapp-theme .fault-working .fault-pulse { stroke: #ffd08a; }
+
 /* ═══════════════════ /mvp — prototipo interactivo (S7) ═══════════════════ */
 
 .mvp-page {
@@ -1156,6 +1210,48 @@ h2 { font-size: clamp(1.6rem, 4vw, 2.4rem); margin-bottom: 1rem; }
   user-select: none;
 }
 
+/* Campos que el participante llena (nombre y lugar de la falla) */
+.mvp-field { margin-bottom: 1rem; }
+.mvp-field label {
+  display: block;
+  font-size: 0.88rem;
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+}
+.mvp-field input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 1rem;
+  padding: 0.8rem 0.9rem;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+.mvp-field input:focus { border-color: var(--accent); }
+.mvp-field input::placeholder { color: #7a6857; }
+
+.mvp-geo-btn {
+  margin-top: 0.5rem;
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0.2rem 0;
+}
+.mvp-geo-btn:hover { text-decoration: underline; }
+
+.mvp-reported-place {
+  color: var(--text-dim);
+  font-size: 0.83rem;
+  margin-top: 0.15rem;
+}
+
 .mvp-confirming { text-align: center; padding: 2.5rem 0; }
 .mvp-confirm-check {
   width: 58px;
@@ -1183,8 +1279,23 @@ h2 { font-size: clamp(1.6rem, 4vw, 2.4rem); margin-bottom: 1rem; }
   border-right: 1px solid var(--border);
   border-radius: 16px;
   overflow: hidden;
-  background: #0a1220;
+  background: #150e08;
   box-shadow: 0 14px 40px rgba(0, 0, 0, 0.45);
+}
+/* La tarjeta de ETA nunca flota dentro del MVP: la ruta arranca en la esquina
+   inferior izquierda y la tarjeta tapaba justo el tramo inicial del recorrido.
+   El media query de 560px no bastaba porque mide el viewport, no este shell. */
+.livemap .eta-card {
+  position: static;
+  left: auto;
+  bottom: auto;
+  margin: 0;
+  min-width: 0;
+  border-radius: 0;
+  border-width: 1px 0 0;
+  backdrop-filter: none;
+  background: var(--bg-raised);
+  box-shadow: none;
 }
 /* Camioneta conducida por estado. La posición se recalcula cada mapTickMs
    (250ms); la transición cubre justo ese intervalo para que el recorrido se
@@ -1340,4 +1451,18 @@ h2 { font-size: clamp(1.6rem, 4vw, 2.4rem); margin-bottom: 1rem; }
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   text-align: right;
+}
+
+.res-tag {
+  display: inline-block;
+  margin-left: 0.4rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.05rem 0.35rem;
+  vertical-align: middle;
 }

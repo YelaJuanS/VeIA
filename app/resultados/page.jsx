@@ -81,6 +81,7 @@ function summarizeMvpSession(id, evs) {
   const complete = find("task_complete");
   const abandon = find("task_abandon");
   const feedback = find("feedback");
+  const report = find("report_submitted");
 
   // Permanencia por pantalla (suma de screen_view)
   const dwell = {};
@@ -98,6 +99,9 @@ function summarizeMvpSession(id, evs) {
   const lastT = evs.reduce((m, e) => Math.max(m, Number(e.t) || 0), 0);
   return {
     id,
+    nombre: report?.data?.nombre || "",
+    lugar: report?.data?.lugar || "",
+    usedGeo: report?.data?.usedGeo === true || report?.data?.usedGeo === "true",
     startTs: start?.ts || evs[0]?.ts || "",
     reachedValue: !!value,
     timeToValueMs: value ? Number(value.data?.timeToValueMs) || null : null,
@@ -157,17 +161,17 @@ function fmtSec(ms) {
 function buildMvpCsv(events) {
   const cols = [
     "sessionId", "type", "ts", "t_ms", "screen", "targetId",
-    "interactive", "duration_ms", "from", "to", "extra",
+    "interactive", "duration_ms", "from", "to", "nombre", "lugar", "extra",
   ];
   const rows = [cols.join(",")];
   for (const e of dedupeMvpEvents(events)) {
     const d = e.data || {};
-    const { targetId, interactive, durationMs, from, to, ...rest } = d;
+    const { targetId, interactive, durationMs, from, to, nombre, lugar, ...rest } = d;
     rows.push(
       [
         e.sessionId, e.type, e.ts, e.t, e.screen,
         targetId ?? "", interactive ?? "", durationMs ?? "",
-        from ?? "", to ?? "",
+        from ?? "", to ?? "", nombre ?? "", lugar ?? "",
         Object.keys(rest).length ? JSON.stringify(rest) : "",
       ].map(csvEscape).join(",")
     );
@@ -423,6 +427,8 @@ export default function ResultadosPage() {
                   <thead>
                     <tr>
                       <th>Sesión</th>
+                      <th>Participante</th>
+                      <th>Lugar reportado</th>
                       <th>Inicio</th>
                       <th className="num">Time-to-value</th>
                       <th>¿Valor?</th>
@@ -438,6 +444,11 @@ export default function ResultadosPage() {
                     {mvpSessions.map((s) => (
                       <tr key={s.id}>
                         <td>{s.id.slice(0, 8)}</td>
+                        <td>{s.nombre || "—"}</td>
+                        <td>
+                          {s.lugar || "—"}
+                          {s.usedGeo && <span className="res-tag">ubicación</span>}
+                        </td>
                         <td>{s.startTs ? new Date(s.startTs).toLocaleString() : "—"}</td>
                         <td className="num">{fmtSec(s.timeToValueMs)}</td>
                         <td>{s.reachedValue ? "Sí" : "No"}</td>

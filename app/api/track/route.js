@@ -9,6 +9,7 @@ const TYPES = new Set([
   "task_start",
   "screen_view",
   "tap",
+  "report_submitted",
   "value_moment_reached",
   "hesitation",
   "backtrack",

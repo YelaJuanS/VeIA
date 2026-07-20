@@ -56,7 +56,7 @@ export default function FeedbackPage() {
   }
 
   return (
-    <main className="test-page">
+    <main className="test-page reparapp-theme">
       <div className="test-card">
         {!done ? (
           <>
